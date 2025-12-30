@@ -15,7 +15,7 @@ infrastructure_folder = parent_folder.joinpath("infrastructure")
 path.insert(0, str(infrastructure_folder.joinpath("dimensional_analysis")))
 
 # Internal modules
-from dimension_estimation import generateDimensionDatabase, visualizePointwiseEstimate
+from dimension_estimation import generateDimensionDatabase, plotCumulativeVariances, visualizePointwiseEstimate
 
 # External modules
 from numpy import random
@@ -39,6 +39,7 @@ percent_variances = [50, 75, 90]
 
 # Plot settings
 used_engine = "plotly"
+mean_only_flag = False
 use_3d_flag = False
 
 # Show and save flags
@@ -59,6 +60,18 @@ raw_data_array = random.rand(n_points, n_parameters)
 # Generate the dimension database and get the corresponding db file path
 db_path = generateDimensionDatabase(raw_data_array = raw_data_array, softmax_distance = softmax_distance)
 
-# Visualize the results at the needed percent variance levels
+# Plot the cumulative percent variances stored in the db file
+plotCumulativeVariances(db_path = db_path,
+                        used_engine = used_engine,
+                        mean_only_flag = mean_only_flag,
+                        show_flag = show_flag,
+                        save_flag = save_flag)
+
+# Visualize the dimension estimates at the needed percent variance levels
 for percent_variance in percent_variances:
-    visualizePointwiseEstimate(db_path = db_path, percent_variance = percent_variance, used_engine = used_engine, use_3d_flag = use_3d_flag)
+    visualizePointwiseEstimate(db_path = db_path,
+                               percent_variance = percent_variance,
+                               used_engine = used_engine,
+                               use_3d_flag = use_3d_flag,
+                               show_flag = show_flag,
+                               save_flag = save_flag)
