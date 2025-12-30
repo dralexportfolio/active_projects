@@ -18,7 +18,7 @@ path.insert(0, str(infrastructure_folder.joinpath("dimensional_analysis")))
 from dimension_estimation import generateDimensionDatabase, plotCumulativeVariances, plotMarginalVariances, visualizePointwiseEstimate
 
 # External modules
-from numpy import random
+from numpy import random, zero
 
 
 #################################
@@ -27,9 +27,13 @@ from numpy import random
 # Random seed
 seed = 0
 
+# Geometric settings
+circle_radius = 1
+circle_noise = 0.05
+
 # Number of points and parameters
 n_points = 500
-n_parameters = 10
+n_parameters = 2
 
 # Softmax distance
 softmax_distance = 1
@@ -55,7 +59,7 @@ if seed is not None:
     random.seed(seed = seed)
 
 # Generate the raw random data
-raw_data_array = random.rand(n_points, n_parameters)
+raw_data_array = zeros((n_points, n_parameters))
 
 # Generate the dimension database and get the corresponding db file path
 db_path = generateDimensionDatabase(raw_data_array = raw_data_array, softmax_distance = softmax_distance)
