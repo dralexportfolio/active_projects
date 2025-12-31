@@ -29,7 +29,7 @@ from numpy import random
 seed = 0
 
 # Geometric settings
-circle_radius = 1
+sphere_radius = 1
 noise_level = 0.05
 
 # Number of points and parameters
@@ -45,7 +45,7 @@ percent_variances = [50, 75, 90]
 # Plot settings
 used_engine = "plotly"
 mean_only_flag = False
-use_3d_flag = False
+use_3d_flag = True
 
 # Show and save flags
 show_flag = True
@@ -62,17 +62,20 @@ if seed is not None:
 # Generate the raw random data
 raw_data_array = (2 * random.rand(n_points, n_parameters) - 1) * noise_level
 for row_index in range(n_points):
-    # Generate the raw x-value and y-value
+    # Generate the raw x-value, y-value and z-value
     raw_x_value = random.randn()
     raw_y_value = random.randn()
+    raw_z_value = random.randn()
 
     # Normalize to get the correct final values
-    x_value = circle_radius * raw_x_value / sqrt(raw_x_value**2 + raw_y_value**2)
-    y_value = circle_radius * raw_y_value / sqrt(raw_x_value**2 + raw_y_value**2)
+    x_value = sphere_radius * raw_x_value / sqrt(raw_x_value**2 + raw_y_value**2 + raw_z_value**2)
+    y_value = sphere_radius * raw_y_value / sqrt(raw_x_value**2 + raw_y_value**2 + raw_z_value**2)
+    z_value = sphere_radius * raw_z_value / sqrt(raw_x_value**2 + raw_y_value**2 + raw_z_value**2)
 
     # Store the computed values
     raw_data_array[row_index, 0] += x_value
     raw_data_array[row_index, 1] += y_value
+    raw_data_array[row_index, 2] += z_value
 
 # Generate the dimension database and get the corresponding db file path
 db_path = generateDimensionDatabase(raw_data_array = raw_data_array, softmax_distance = softmax_distance)
