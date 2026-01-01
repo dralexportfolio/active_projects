@@ -37,13 +37,13 @@ n_points = 500
 n_parameters = 5
 
 # Softmax distance
-softmax_distance = 1.5
+softmax_distance = 0.8
 
 # Percent variances to use
 percent_variances = [50, 75, 90]
 
 # Plot settings
-used_engine = "plotly"
+used_engine = "matplotlib"
 mean_only_flag = False
 use_3d_flag = False
 

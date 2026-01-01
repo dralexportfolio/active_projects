@@ -18,7 +18,7 @@ path.insert(0, str(infrastructure_folder.joinpath("dimensional_analysis")))
 from dimension_estimation import generateDimensionDatabase, plotCumulativeVariances, plotMarginalVariances, visualizePointwiseEstimate
 
 # External modules
-from math import sqrt
+from math import cos, pi, sin, sqrt
 from numpy import random
 
 
@@ -29,14 +29,11 @@ from numpy import random
 seed = 0
 
 # Geometric settings
-circle_radius = 1
-circle_shift = -1
-sphere_radius = 1
-sphere_shift = 1
+disk_radius = 1
 noise_level = 0.05
 
 # Number of points and parameters
-n_points = 1000
+n_points = 500
 n_parameters = 5
 
 # Softmax distance
@@ -46,9 +43,9 @@ softmax_distance = 0.8
 percent_variances = [50, 75, 90]
 
 # Plot settings
-used_engine = "plotly"
+used_engine = "matplotlib"
 mean_only_flag = False
-use_3d_flag = True
+use_3d_flag = False
 
 # Show and save flags
 show_flag = True
@@ -65,35 +62,17 @@ if seed is not None:
 # Generate the raw random data
 raw_data_array = (2 * random.rand(n_points, n_parameters) - 1) * noise_level
 for row_index in range(n_points):
-    if random.rand() < 0.5:
-        # Handle the circle case
-        # Generate the raw x-value, y-value and z-value
-        raw_x_value = random.randn()
-        raw_y_value = random.randn()
+    # Generate the radius and angle values
+    radius_value = disk_radius * random.rand()**0.5
+    angle_value = 2 * pi * random.rand()
 
-        # Normalize to get the correct final values
-        x_value = sphere_radius * raw_x_value / sqrt(raw_x_value**2 + raw_y_value**2) + circle_shift
-        y_value = sphere_radius * raw_y_value / sqrt(raw_x_value**2 + raw_y_value**2)
+    # Convert to x-value and y-value
+    x_value = radius_value * cos(angle_value)
+    y_value = radius_value * sin(angle_value)
 
-        # Store the computed values
-        raw_data_array[row_index, 0] += x_value
-        raw_data_array[row_index, 1] += y_value
-    else:
-        # Handle the sphere case
-        # Generate the raw x-value, y-value and z-value
-        raw_x_value = random.randn()
-        raw_y_value = random.randn()
-        raw_z_value = random.randn()
-
-        # Normalize to get the correct final values
-        x_value = sphere_radius * raw_x_value / sqrt(raw_x_value**2 + raw_y_value**2 + raw_z_value**2) + sphere_shift
-        y_value = sphere_radius * raw_y_value / sqrt(raw_x_value**2 + raw_y_value**2 + raw_z_value**2)
-        z_value = sphere_radius * raw_z_value / sqrt(raw_x_value**2 + raw_y_value**2 + raw_z_value**2)
-
-        # Store the computed values
-        raw_data_array[row_index, 0] += x_value
-        raw_data_array[row_index, 1] += y_value
-        raw_data_array[row_index, 2] += z_value
+    # Store the computed values
+    raw_data_array[row_index, 0] += x_value
+    raw_data_array[row_index, 1] += y_value
 
 # Generate the dimension database and get the corresponding db file path
 db_path = generateDimensionDatabase(raw_data_array = raw_data_array, softmax_distance = softmax_distance)

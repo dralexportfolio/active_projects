@@ -37,7 +37,7 @@ n_points = 500
 n_parameters = 5
 
 # Softmax distance
-softmax_distance = 1.5
+softmax_distance = 0.8
 
 # Percent variances to use
 percent_variances = [50, 75, 90]
