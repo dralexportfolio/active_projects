@@ -20,6 +20,9 @@ from Board import Board
 from color_helper import RGB
 from Polygon import HEXAGON_REGULAR_TALL, Polygon
 
+# External modules
+from math import sqrt
+
 
 #####################################################
 ### Define important shared settings for the game ###
@@ -142,3 +145,59 @@ COLORS_PER_TILE = {
 	"gold": RGB((160, 140, 50)),
 	"water": RGB((80, 210, 240))
 }
+
+# Define any additional colors
+CIRCLE_COLOR = RGB((210, 170, 110))
+LOW_PROB_NUMBER_COLOR = RGB((0, 0, 0))
+HIGH_PROB_NUMBER_COLOR = RGB((200, 0, 0))
+
+
+##############################################
+### Define the catan board generator class ###
+##############################################
+
+
+
+#game_mode = "Original: 3-4 Player"
+#game_mode = "Original: 5-6 Player"
+#game_mode = "Seafarers: 3-4 Player"
+game_mode = "Seafarers: 5-6 Player"
+
+bevel_attitude = 25
+bevel_size = 0.1
+sun_angle = 120
+sun_attitude = 35
+dpi = 600
+tint_shade = RGB((255, 255, 255))
+
+n_polygons = sum(ROW_COUNTS_PER_MODE[game_mode])
+all_polygons = [HEXAGON_REGULAR_TALL for _ in range(n_polygons)]
+
+x_shift_per_polygon = []
+y_shift_per_polygon = []
+for row_index in range(len(ROW_COUNTS_PER_MODE[game_mode])):
+	y_shift = 3 / 2 * row_index
+	for col_index in range(ROW_COUNTS_PER_MODE[game_mode][row_index]):
+		x_shift = sqrt(3) * (col_index - ROW_COUNTS_PER_MODE[game_mode][row_index] / 2)
+		x_shift_per_polygon.append(x_shift)
+		y_shift_per_polygon.append(y_shift)
+
+board = Board(n_polygons = n_polygons,
+			  all_polygons = all_polygons,
+			  x_shift_per_polygon = x_shift_per_polygon,
+			  y_shift_per_polygon = y_shift_per_polygon)
+
+board.preprocessBevelInfo(bevel_attitude = bevel_attitude, bevel_size = bevel_size)
+board.preprocessAllSunInfo(sun_angle = sun_angle, sun_attitude = sun_attitude)
+
+from numpy import random
+possible_tiles = []
+for tile in TILE_COUNTS_PER_MODE[game_mode]:
+	for _ in range(TILE_COUNTS_PER_MODE[game_mode][tile]):
+		possible_tiles.append(tile)
+for polygon_index in range(n_polygons):
+	tile_index = random.randint(len(possible_tiles))
+	selected_tile = possible_tiles.pop(tile_index)
+	board.setTintShade(tint_shade = COLORS_PER_TILE[selected_tile], polygon_index = polygon_index)
+
+board.render(dpi = dpi).show()
