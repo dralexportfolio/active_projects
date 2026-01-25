@@ -19,14 +19,22 @@ path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 from Board import Board
 from color_helper import RGB
 from Polygon import HEXAGON_REGULAR_TALL, Polygon
+from tkinter_helper import createCanvas, createRectangle, createWindow
 
 # External modules
 from math import sqrt
+from PrivateAttributesDecorator import private_attributes_dec
 
 
 #####################################################
 ### Define important shared settings for the game ###
 #####################################################
+# Define the default bevel and sun information
+BEVEL_ATTITUDE = 25
+BEVEL_SIZE = 0.1
+SUN_ANGLE = 120
+SUN_ATTITUDE = 35
+
 # Define the lists needed for parameter selection
 ALL_GAME_MODES = ["Original: 3-4 Player", "Original: 5-6 Player", "Seafarers: 3-4 Player", "Seafarers: 5-6 Player"]
 
@@ -139,14 +147,14 @@ COLORS_PER_TILE = {
 	"brick": RGB((180, 60, 30)),
 	"sheep": RGB((20, 200, 50)),
 	"stone": RGB((127, 127, 127)),
-	"wheat": RGB((230, 200, 20)),
+	"wheat": RGB((250, 230, 20)),
 	"wood": RGB((10, 80, 10)),
 	"desert": RGB((230, 210, 150)),
 	"gold": RGB((160, 140, 50)),
 	"water": RGB((80, 210, 240))
 }
 
-# Define any additional colors
+# Define any additional object colors
 CIRCLE_COLOR = RGB((210, 170, 110))
 LOW_PROB_NUMBER_COLOR = RGB((0, 0, 0))
 HIGH_PROB_NUMBER_COLOR = RGB((200, 0, 0))
@@ -155,20 +163,67 @@ HIGH_PROB_NUMBER_COLOR = RGB((200, 0, 0))
 ##############################################
 ### Define the catan board generator class ###
 ##############################################
+# Create the decorator needed for making the attributes private
+catan_generator_decorator = private_attributes_dec("_used_canvas,"					# class variables
+												   "_used_window",
+												   "_BACKGROUND_COLOR_DARK",		# class constants
+												   "_BACKGROUND_COLOR_LIGHT",
+												   "_FOREGROUND_COLOR_DARK",
+												   "_FOREGROUND_COLOR_LIGHT")
 
+# Define the class with private attributes
+@catan_generator_decorator
+class CatanGenerator:
+	### Define class constants ###
+	_BACKGROUND_COLOR_DARK = RGB("#cccccc")
+	_BACKGROUND_COLOR_LIGHT = RGB("#eeeeee")
+	_FOREGROUND_COLOR_DARK = RGB("#000000")
+	_FOREGROUND_COLOR_LIGHT = RGB("#ffffff")
 
+	### Initialize the class ###
+	def __init__(self):
+		# Create the frame and canvas for this class
+		self._used_window = createWindow(width_parameter = 0.9,
+										 height_parameter = 0.85,
+										 title = "Settlers Of Catan - Board Generator")
+		self._used_canvas = createCanvas(used_window = self._used_window,
+										 fill_color = self._BACKGROUND_COLOR_DARK)
+
+		# Create the needed section rectangles
+		createRectangle(used_canvas = self._used_canvas,
+						tl_x_parameter = 0.00,
+						tl_y_parameter = 0.00,
+						br_x_parameter = 0.24,
+						br_y_parameter = 0.22,
+						fill_color = self._BACKGROUND_COLOR_LIGHT)
+		createRectangle(used_canvas = self._used_canvas,
+						tl_x_parameter = 0.00,
+						tl_y_parameter = 0.22,
+						br_x_parameter = 0.24,
+						br_y_parameter = 0.48,
+						fill_color = self._BACKGROUND_COLOR_LIGHT)
+		createRectangle(used_canvas = self._used_canvas,
+						tl_x_parameter = 0.00,
+						tl_y_parameter = 0.48,
+						br_x_parameter = 0.24,
+						br_y_parameter = 0.74,
+						fill_color = self._BACKGROUND_COLOR_LIGHT)
+		createRectangle(used_canvas = self._used_canvas,
+						tl_x_parameter = 0.00,
+						tl_y_parameter = 0.74,
+						br_x_parameter = 0.24,
+						br_y_parameter = 1.00,
+						fill_color = self._BACKGROUND_COLOR_LIGHT)
+
+CatanGenerator()
 
 #game_mode = "Original: 3-4 Player"
 #game_mode = "Original: 5-6 Player"
 #game_mode = "Seafarers: 3-4 Player"
 game_mode = "Seafarers: 5-6 Player"
 
-bevel_attitude = 25
-bevel_size = 0.1
-sun_angle = 120
-sun_attitude = 35
 dpi = 600
-tint_shade = RGB((255, 255, 255))
+#tint_shade = RGB((255, 255, 255))
 
 n_polygons = sum(ROW_COUNTS_PER_MODE[game_mode])
 all_polygons = [HEXAGON_REGULAR_TALL for _ in range(n_polygons)]
@@ -187,8 +242,8 @@ board = Board(n_polygons = n_polygons,
 			  x_shift_per_polygon = x_shift_per_polygon,
 			  y_shift_per_polygon = y_shift_per_polygon)
 
-board.preprocessBevelInfo(bevel_attitude = bevel_attitude, bevel_size = bevel_size)
-board.preprocessAllSunInfo(sun_angle = sun_angle, sun_attitude = sun_attitude)
+board.preprocessBevelInfo(bevel_attitude = BEVEL_ATTITUDE, bevel_size = BEVEL_SIZE)
+board.preprocessAllSunInfo(sun_angle = SUN_ANGLE, sun_attitude = SUN_ATTITUDE)
 
 from numpy import random
 possible_tiles = []
