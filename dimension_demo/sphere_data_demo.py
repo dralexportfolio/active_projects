@@ -15,7 +15,7 @@ infrastructure_folder = parent_folder.joinpath("infrastructure")
 path.insert(0, str(infrastructure_folder.joinpath("dimensional_analysis")))
 
 # Internal modules
-from dimension_estimation import generateDimensionDatabase, plotCumulativeVariances, plotMarginalVariances, visualizePointwiseEstimate
+from persistent_dimension import estimatePointwiseDimension, generateDimensionDatabase, plotDimensionEstimateOfPoint
 
 # External modules
 from math import sqrt
@@ -36,20 +36,29 @@ noise_level = 0.05
 n_points = 500
 n_parameters = 5
 
-# Softmax distance
+# Softmax distance settings
 softmax_distance = 0.8
+min_softmax_distance = 0.1
+max_softmax_distance = 2.5
+n_distances = 20
 
-# Percent variances to use
-percent_variances = [50, 75, 90]
+# Percent variance settings
+percent_variance = 75
+min_percent_variance = 50
+max_percent_variance = 90
 
-# Plot settings
+# General plot settings
 used_engine = "plotly"
-mean_only_flag = False
-use_3d_flag = True
-
-# Show and save flags
+round_flag = False
 show_flag = True
 save_flag = False
+
+# Single point plot settings
+row_index = 0
+n_samples = 200
+
+# All points plot settings
+use_3d_flag = False
 
 
 ##############################
@@ -78,20 +87,51 @@ for row_index in range(n_points):
     raw_data_array[row_index, 2] += z_value
 
 # Generate the dimension database and get the corresponding db file path
-db_path = generateDimensionDatabase(raw_data_array = raw_data_array, softmax_distance = softmax_distance)
+db_path = generateDimensionDatabase(raw_data_array = raw_data_array,
+									min_softmax_distance = min_softmax_distance,
+									max_softmax_distance = max_softmax_distance,
+									n_distances = n_distances)
 
-# Plot the marginal and cumulative percent variances stored in the db file
-plotMarginalVariances(db_path = db_path,
-                      used_engine = used_engine,
-                      mean_only_flag = mean_only_flag,
-                      show_flag = show_flag,
-                      save_flag = save_flag)
-plotCumulativeVariances(db_path = db_path,
-                        used_engine = used_engine,
-                        mean_only_flag = mean_only_flag,
-                        show_flag = show_flag,
-                        save_flag = save_flag)
+# Create a plot of the dimension estimate of the given point ranging over only percent variance
+plotDimensionEstimateOfPoint(db_path = db_path,
+							 row_index = row_index,
+							 min_softmax_distance = softmax_distance,
+							 max_softmax_distance = softmax_distance,
+							 min_percent_variance = min_percent_variance,
+							 max_percent_variance = max_percent_variance,
+							 n_samples = n_samples,
+							 used_engine = used_engine,
+							 round_flag = round_flag,
+							 show_flag = show_flag,
+							 save_flag = save_flag)
 
+# Create a plot of the dimension estimate of the given point ranging over only softmax distance
+plotDimensionEstimateOfPoint(db_path = db_path,
+							 row_index = row_index,
+							 min_softmax_distance = min_softmax_distance,
+							 max_softmax_distance = max_softmax_distance,
+							 min_percent_variance = percent_variance,
+							 max_percent_variance = percent_variance,
+							 n_samples = n_samples,
+							 used_engine = used_engine,
+							 round_flag = round_flag,
+							 show_flag = show_flag,
+							 save_flag = save_flag)
+
+# Create a plot of the dimension estimate of the given point ranging over both softmax distance and percent variance
+plotDimensionEstimateOfPoint(db_path = db_path,
+							 row_index = row_index,
+							 min_softmax_distance = min_softmax_distance,
+							 max_softmax_distance = max_softmax_distance,
+							 min_percent_variance = min_percent_variance,
+							 max_percent_variance = max_percent_variance,
+							 n_samples = n_samples,
+							 used_engine = used_engine,
+							 round_flag = round_flag,
+							 show_flag = show_flag,
+							 save_flag = save_flag)
+
+'''
 # Visualize the dimension estimates at the needed percent variance levels
 for percent_variance in percent_variances:
     visualizePointwiseEstimate(db_path = db_path,
@@ -100,3 +140,4 @@ for percent_variance in percent_variances:
                                use_3d_flag = use_3d_flag,
                                show_flag = show_flag,
                                save_flag = save_flag)
+'''
