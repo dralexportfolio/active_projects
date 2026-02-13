@@ -15,7 +15,7 @@ infrastructure_folder = parent_folder.joinpath("infrastructure")
 path.insert(0, str(infrastructure_folder.joinpath("dimensional_analysis")))
 
 # Internal modules
-from persistent_dimension import estimatePointwiseDimension, generateDimensionDatabase, plotDimensionEstimateOfPoint
+from persistent_dimension import estimatePointwiseDimension, generateDimensionDatabase, plotDimensionEstimateOfPoint, plotDimensionEstimateOfSet
 
 # External modules
 from math import sqrt
@@ -48,13 +48,14 @@ min_percent_variance = 50
 max_percent_variance = 90
 
 # General plot settings
-used_engine = "plotly"
+used_engine_2d = "matplotlib"
+used_engine_3d = "plotly"
 round_flag = False
 show_flag = True
 save_flag = False
 
 # Single point plot settings
-row_index = 0
+row_index_to_plot = 0
 n_samples = 200
 
 # All points plot settings
@@ -91,65 +92,48 @@ db_path = generateDimensionDatabase(raw_data_array = raw_data_array,
 
 # Create a plot of the dimension estimate of the given point ranging over only percent variance
 plotDimensionEstimateOfPoint(db_path = db_path,
-							 row_index = row_index,
+							 row_index = row_index_to_plot,
 							 min_softmax_distance = softmax_distance,
 							 max_softmax_distance = softmax_distance,
 							 min_percent_variance = min_percent_variance,
 							 max_percent_variance = max_percent_variance,
 							 n_samples = n_samples,
-							 used_engine = used_engine,
+							 used_engine = used_engine_2d,
 							 round_flag = round_flag,
 							 show_flag = show_flag,
 							 save_flag = save_flag)
 
 # Create a plot of the dimension estimate of the given point ranging over only softmax distance
 plotDimensionEstimateOfPoint(db_path = db_path,
-							 row_index = row_index,
+							 row_index = row_index_to_plot,
 							 min_softmax_distance = min_softmax_distance,
 							 max_softmax_distance = max_softmax_distance,
 							 min_percent_variance = percent_variance,
 							 max_percent_variance = percent_variance,
 							 n_samples = n_samples,
-							 used_engine = used_engine,
+							 used_engine = used_engine_2d,
 							 round_flag = round_flag,
 							 show_flag = show_flag,
 							 save_flag = save_flag)
 
 # Create a plot of the dimension estimate of the given point ranging over both softmax distance and percent variance
 plotDimensionEstimateOfPoint(db_path = db_path,
-							 row_index = row_index,
+							 row_index = row_index_to_plot,
 							 min_softmax_distance = min_softmax_distance,
 							 max_softmax_distance = max_softmax_distance,
 							 min_percent_variance = min_percent_variance,
 							 max_percent_variance = max_percent_variance,
 							 n_samples = n_samples,
-							 used_engine = used_engine,
+							 used_engine = used_engine_3d,
 							 round_flag = round_flag,
 							 show_flag = show_flag,
 							 save_flag = save_flag)
 
-'''
-# Generate the dimension database and get the corresponding db file path
-db_path = generateDimensionDatabase(raw_data_array = raw_data_array, softmax_distance = softmax_distance)
-
-# Plot the marginal and cumulative percent variances stored in the db file
-plotMarginalVariances(db_path = db_path,
-                      used_engine = used_engine,
-                      mean_only_flag = mean_only_flag,
-                      show_flag = show_flag,
-                      save_flag = save_flag)
-plotCumulativeVariances(db_path = db_path,
-                        used_engine = used_engine,
-                        mean_only_flag = mean_only_flag,
-                        show_flag = show_flag,
-                        save_flag = save_flag)
-
-# Visualize the dimension estimates at the needed percent variance levels
-for percent_variance in percent_variances:
-    visualizePointwiseEstimate(db_path = db_path,
-                               percent_variance = percent_variance,
-                               used_engine = used_engine,
-                               use_3d_flag = use_3d_flag,
-                               show_flag = show_flag,
-                               save_flag = save_flag)
-'''
+# Create a scatter plot of the dimension estimate of each point given a fixed softmax distance and percent variance
+plotDimensionEstimateOfSet(db_path = db_path,
+						   softmax_distance = softmax_distance,
+						   percent_variance = percent_variance,
+						   used_engine = used_engine_3d if use_3d_flag == True else used_engine_2d,
+						   use_3d_flag = use_3d_flag,
+						   show_flag = show_flag,
+						   save_flag = save_flag)
