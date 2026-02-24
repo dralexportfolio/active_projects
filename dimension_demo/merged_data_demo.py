@@ -57,13 +57,13 @@ save_flag = False
 
 # Single point plot settings
 used_engine_single_2d = "matplotlib"
-used_engine_single_3d = "plotly"
+used_engine_single_3d = "matplotlib"
 row_index_single = 0
 n_samples_single = 200
 
 # Scatter plot settings
-used_engine_scatter_2d = "plotly"
-used_engine_scatter_3d = "plotly"
+used_engine_scatter_2d = "matplotlib"
+used_engine_scatter_3d = "matplotlib"
 use_3d_flag_scatter = True
 
 # Bar chart plot settings
@@ -116,6 +116,7 @@ db_path = generateDimensionDatabase(raw_data_array = raw_data_array,
 									min_softmax_distance = min_softmax_distance,
 									max_softmax_distance = max_softmax_distance,
 									n_distances = n_distances)
+
 
 #########################################################
 ### Create plots of the processed data in the db file ###

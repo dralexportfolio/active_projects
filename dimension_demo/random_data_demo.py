@@ -29,7 +29,7 @@ seed = 0
 
 # Number of points and parameters
 n_points = 500
-n_parameters = 10
+n_parameters = 5
 
 # Softmax distance settings
 softmax_distance = 0.8
@@ -49,13 +49,13 @@ save_flag = False
 
 # Single point plot settings
 used_engine_single_2d = "matplotlib"
-used_engine_single_3d = "plotly"
+used_engine_single_3d = "matplotlib"
 row_index_single = 0
 n_samples_single = 200
 
 # Scatter plot settings
 used_engine_scatter_2d = "matplotlib"
-used_engine_scatter_3d = "plotly"
+used_engine_scatter_3d = "matplotlib"
 use_3d_flag_scatter = True
 
 # Bar chart plot settings
