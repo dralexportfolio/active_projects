@@ -20,11 +20,11 @@ from Board import Board
 from color_helper import RGB
 from Polygon import HEXAGON_REGULAR_TALL, Polygon
 from tkinter_helper import createCanvas, createRectangle, createWindow
-from type_helper import isNumeric
+from type_helper import isNumeric, tolerantlyCompare
 
 # External modules
 from math import log2, sqrt
-from numpy import random, zeros
+from numpy import random
 from PIL import Image
 from PrivateAttributesDecorator import private_attributes_dec
 
@@ -38,8 +38,9 @@ BEVEL_SIZE = 0.1
 SUN_ANGLE = 120
 SUN_ATTITUDE = 35
 
-# Define the lists needed for parameter selection
+# Define the lists of keys shared between multiple dictionaries
 ALL_GAME_MODES = ["Original: 3-4 Player", "Original: 5-6 Player", "Seafarers: 3-4 Player", "Seafarers: 5-6 Player"]
+ALL_TILE_TYPES = ["brick", "sheep", "stone", "wheat", "wood", "desert", "gold", "water"]
 
 # Define a dictionary of number counts for each game mode
 NUMBER_COUNTS_PER_MODE = {
@@ -162,7 +163,7 @@ CIRCLE_COLOR = RGB((210, 170, 110))
 LOW_PROB_NUMBER_COLOR = RGB((0, 0, 0))
 HIGH_PROB_NUMBER_COLOR = RGB((200, 0, 0))
 
-# Define a marginal Shannon entropy function for use with classes below
+# Define a marginal Shannon entropy function
 def computeMarginalEntropy(prob_value:Any) -> float:
 	# Compute the marginal Shannon entropy associated with a probability value
 	# Verify the inputs
@@ -180,15 +181,29 @@ def computeMarginalEntropy(prob_value:Any) -> float:
 ### Define the board generator tiling class ###
 ###############################################
 # Create the decorator needed for making the attributes private
-catan_generator_tiling_decorator = private_attributes_dec("_adjacency_matrix",		# class variables
+catan_generator_tiling_decorator = private_attributes_dec("_adjacency_matrix",					# class variables
 														  "_board",
 														  "_n_polygons",
+														  "_neighbor_indices_per_polygon",
 														  "_tiles_per_index",
-														  "_initializeTiling")		# private functions
+														  "_ENTROPY_WEIGHTS",					# class constants
+														  "_computeEntropyPerTileType",			# private functions
+														  "_initializeTiling")
 
 # Define the class with private attributes
 @catan_generator_tiling_decorator
 class CatanGeneratorTiling:
+	### Define class constants ###
+	_ENTROPY_WEIGHTS = {
+		"brick": 1,
+		"sheep": 1,
+		"stone": 1,
+		"wheat": 1,
+		"wood": 1,
+		"desert": 1,
+		"gold": 1,
+		"water": -1
+	}
 	### Initialize the class ###
 	def __init__(self, game_mode:str):
 		# Verify the inputs
@@ -230,32 +245,130 @@ class CatanGeneratorTiling:
 
 		# Randomly assigning an initial tile selection to each polygon
 		# Initialize the needed storage
-		self._tiles_per_index = []
+		self._tile_per_polygon = []
 		# Create the list of currently selectable tiles given the current game mode
 		possible_tiles = []
-		for tile in TILE_COUNTS_PER_MODE[self._game_mode]:
-			for _ in range(TILE_COUNTS_PER_MODE[self._game_mode][tile]):
-				possible_tiles.append(tile)
+		for tile_type in TILE_COUNTS_PER_MODE[self._game_mode]:
+			for _ in range(TILE_COUNTS_PER_MODE[self._game_mode][tile_type]):
+				possible_tiles.append(tile_type)
 		# Perform the tiling assignment to each polygon
 		for polygon_index in range(self._n_polygons):
 			# Select and tile and remove it from the list of possible tiles
 			tile_index = random.randint(len(possible_tiles))
-			selected_tile = possible_tiles.pop(tile_index)
+			selected_tile_type = possible_tiles.pop(tile_index)
 			# Assign this tile to this polygon
-			self._tiles_per_index.append(selected_tile)
+			self._tile_per_polygon.append(selected_tile_type)
 
-		# Compute the adjacency matrix between the polygons on the board
-		self._adjacency_matrix = zeros((self._n_polygons, self._n_polygons), dtype = int)
+		# Determine the indices adjacent to each polygon on the board
+		# Initialize the needed storage
+		self._neighbor_indices_per_polygon = {}
+		for polygon_index in range(self._n_polygons):
+			self._neighbor_indices_per_polygon[polygon_index] = []
+		# Compute the theoretically correct distance for adjacent polygons
+		theoretical_distance = sqrt(3)
+		# Mark which polygons are adjacent to which other polygons
+		for polygon_index_1 in range(self._n_polygons - 1):
+			# Get the x-shift and y-shift for the 1st polygon
+			x_shift_1 = x_shift_per_polygon[polygon_index_1]
+			y_shift_1 = y_shift_per_polygon[polygon_index_1]
+			# Loop over the needed other polygons
+			for polygon_index_2 in range(polygon_index_1 + 1, self._n_polygons):
+				# Get the x-shift and y-shift for the 2nd polygon
+				x_shift_2 = x_shift_per_polygon[polygon_index_2]
+				y_shift_2 = y_shift_per_polygon[polygon_index_2]
+				# Compute the actual distances between the centers of these polygons
+				actual_distance = sqrt((x_shift_1 - x_shift_2)**2 + (y_shift_1 - y_shift_2)**2)
+				# Mark that the polygons are adjacent if the distance is correct (within a margin of error)
+				if tolerantlyCompare(actual_distance, "==", theoretical_distance, threshold = 10**-3):
+					self._neighbor_indices_per_polygon[polygon_index_1].append(polygon_index_2)
+					self._neighbor_indices_per_polygon[polygon_index_2].append(polygon_index_1)
 
-	### Define functions related to probability distributions for the current tiling ###
+	### Define a function for computing the Shannon entropy of neighbor distributions for each tile type ###
+	def _computeEntropyPerTileType(self) -> dict:
+		# Compute the Shannon entropy of the probability distributions over possible neighbors for each tile type
+		# Get the tile types which actually appear in this particular tiling
+		needed_tile_types = [tile_type for tile_type in ALL_TILE_TYPES if tile_type in self._tile_per_polygon]
+
+		# Initialize the needed storage dictionaries
+		# Initialize the main dictionaries
+		count_results = {}
+		probability_results = {}
+		entropy_results = {}
+		# Loop over the needed tile types and add more information
+		for tile_type_1 in needed_tile_types:
+			# Add in the storage at this level
+			count_results[tile_type_1] = {}
+			probability_results[tile_type_1] = {}
+			entropy_results[tile_type_1] = 0
+			# Loop over secondary tile types for the counts and probabilities
+			for tile_type_2 in needed_tile_types:
+				count_results[tile_type_1][tile_type_2] = 0
+				probability_results[tile_type_1][tile_type_2] = 0
+
+		# Count the number of neighbors of each tile type belonging to each type of tile
+		for polygon_index_1 in range(self._n_polygons):
+			tile_type_1 = self._tile_per_polygon[polygon_index_1]
+			for polygon_index_2 in self._neighbor_indices_per_polygon[polygon_index_1]:
+				tile_type_2 = self._tile_per_polygon[polygon_index_2]
+				count_results[tile_type_1][tile_type_2] += 1
+
+		# Convert the neighbor counts to probabilities of neighbor types
+		for tile_type_1 in needed_tile_types:
+			n_neighbors = sum(list(count_results[tile_type_1].values()))
+			for tile_type_2 in needed_tile_types:
+				probability_results[tile_type_1][tile_type_2] = count_results[tile_type_1][tile_type_2] / n_neighbors
+
+		# Compute the Shannon entropy of each tile type's distribution
+		for tile_type_1 in needed_tile_types:
+			for tile_type_2 in needed_tile_types:
+				entropy_results[tile_type_1] += computeMarginalEntropy(probability_results[tile_type_1][tile_type_2])
+
+		# Return the results
+		return entropy_results
+
+	### Define a function for swapping two tiles in an attempt to improve the tiling ###
+	def swapTiles(self, probability_power:Any = 1):
+		# Swap two tiles in an attempt to improve relevant entropy values
+		# Verify the inputs
+		assert probability_power in [0, 1, 2, 3, float("inf")], "CatanGeneratorTiling::swapTiles: Provided value for 'probability_power' must be 0, 1, 2, 3 or infinity"
+
+		# Compute the current entropy values
+		entropy_results = self._computeEntropyPerTileType()
+
+		# Handle the various cases for computing the probabilities based on tile type
+		if probability_power == 0:
+			pass
+		elif probability_power == float("inf"):
+			pass
+		else:
+			# Compute the theoretical maximum entropy for these distributions
+			maximum_entropy = log2(len(entropy_results))
+
+			# Compute the pseudo-probabilities for each tile type
+			pseudo_probability_results = {}
+			for tile_type in entropy_results:
+				if self._ENTROPY_WEIGHTS[tile_type] > 0:
+					pseudo_probability_results[tile_type] = (entropy_results[tile_type] / maximum_entropy)**probability_power
+				elif self._ENTROPY_WEIGHTS[tile_type] < 0:
+					pseudo_probability_results[tile_type] = (1 - entropy_results[tile_type] / maximum_entropy)**probability_power
+				else:
+					pseudo_probability_results[tile_type] = 0
+
+			# Convert the pseudo-probabilities to probability values
+			probability_results = {}
+			total_pseudo_probability = sum(list(pseudo_probability_results.values()))
+			for tile_type in pseudo_probability_results:
+				probability_results[tile_type] = pseudo_probability_results[tile_type] / total_pseudo_probability
+
+			print(probability_results)
 
 	### Define a function for rendering the tiling ###
 	def render(self, dpi:int) -> Image.Image:
 		# Return a PIL image render of the tiling for the Catan board
 		# Assign the correct colors to each polygon
 		for polygon_index in range(self._n_polygons):
-			selected_tile = self._tiles_per_index[polygon_index]
-			self._board.setTintShade(tint_shade = COLORS_PER_TILE[selected_tile], polygon_index = polygon_index)
+			selected_tile_type = self._tile_per_polygon[polygon_index]
+			self._board.setTintShade(tint_shade = COLORS_PER_TILE[selected_tile_type], polygon_index = polygon_index)
 
 		# Create the rendered image and return it
 		return self._board.render(dpi = dpi)
@@ -323,4 +436,6 @@ game_mode = "Seafarers: 5-6 Player"
 
 dpi = 600
 
-CatanGeneratorTiling(game_mode = game_mode).render(dpi = dpi).show()
+tiling = CatanGeneratorTiling(game_mode = game_mode)
+tiling.swapTiles()
+tiling.render(dpi = dpi).show()
