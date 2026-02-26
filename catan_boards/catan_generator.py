@@ -20,9 +20,12 @@ from Board import Board
 from color_helper import RGB
 from Polygon import HEXAGON_REGULAR_TALL, Polygon
 from tkinter_helper import createCanvas, createRectangle, createWindow
+from type_helper import isNumeric
 
 # External modules
-from math import sqrt
+from math import log2, sqrt
+from numpy import random, zeros
+from PIL import Image
 from PrivateAttributesDecorator import private_attributes_dec
 
 
@@ -159,21 +162,119 @@ CIRCLE_COLOR = RGB((210, 170, 110))
 LOW_PROB_NUMBER_COLOR = RGB((0, 0, 0))
 HIGH_PROB_NUMBER_COLOR = RGB((200, 0, 0))
 
+# Define a marginal Shannon entropy function for use with classes below
+def computeMarginalEntropy(prob_value:Any) -> float:
+	# Compute the marginal Shannon entropy associated with a probability value
+	# Verify the inputs
+	assert isNumeric(prob_value, include_numpy_flag = True) == True, "computeMarginalEntropy: Provided value for 'prob_value' must be numeric"
+	assert 0 <= prob_value and prob_value <= 1, "computeMarginalEntropy: Provided value for 'prob_value' must be >= 0 and <= 1"
 
-##############################################
-### Define the catan board generator class ###
-##############################################
+	# Compute the needed value and return it
+	if prob_value in [0, 1]:
+		return 0
+	else:
+		return prob_value * log2(1 / prob_value)
+
+
+###############################################
+### Define the board generator tiling class ###
+###############################################
 # Create the decorator needed for making the attributes private
-catan_generator_decorator = private_attributes_dec("_used_canvas,"					# class variables
-												   "_used_window",
-												   "_BACKGROUND_COLOR_DARK",		# class constants
-												   "_BACKGROUND_COLOR_LIGHT",
-												   "_FOREGROUND_COLOR_DARK",
-												   "_FOREGROUND_COLOR_LIGHT")
+catan_generator_tiling_decorator = private_attributes_dec("_adjacency_matrix",		# class variables
+														  "_board",
+														  "_n_polygons",
+														  "_tiles_per_index",
+														  "_initializeTiling")		# private functions
 
 # Define the class with private attributes
-@catan_generator_decorator
-class CatanGenerator:
+@catan_generator_tiling_decorator
+class CatanGeneratorTiling:
+	### Initialize the class ###
+	def __init__(self, game_mode:str):
+		# Verify the inputs
+		assert game_mode in ALL_GAME_MODES, "CatanGeneratorTiling::__init__: Provided value for 'game_mode' must be contained in the list ALL_GAME_MODES"
+
+		# Store the provided values
+		self._game_mode = game_mode
+
+		# Initialize a new tiling given the current game mode
+		self._initializeTiling()
+
+	### Define a function for randomly initializing the tiling information ###
+	def _initializeTiling(self):
+		# Set the number of polygons based onm the game mode
+		self._n_polygons = sum(ROW_COUNTS_PER_MODE[self._game_mode])
+
+		# Create a list of all polygons objects to be passed to the Board object
+		all_polygons = [HEXAGON_REGULAR_TALL for _ in range(self._n_polygons)]
+
+		# Create the lists of x-value and y-value shifts associated with each polygon
+		x_shift_per_polygon = []
+		y_shift_per_polygon = []
+		for row_index in range(len(ROW_COUNTS_PER_MODE[self._game_mode])):
+			y_shift = 3 / 2 * row_index
+			for col_index in range(ROW_COUNTS_PER_MODE[self._game_mode][row_index]):
+				x_shift = sqrt(3) * (col_index - ROW_COUNTS_PER_MODE[self._game_mode][row_index] / 2)
+				x_shift_per_polygon.append(x_shift)
+				y_shift_per_polygon.append(y_shift)
+
+		# Create and store the Board object for the tiling
+		self._board = Board(n_polygons = self._n_polygons,
+			  				all_polygons = all_polygons,
+			  				x_shift_per_polygon = x_shift_per_polygon,
+			  				y_shift_per_polygon = y_shift_per_polygon)
+
+		# Apply the selected bevel and sun information to the board
+		self._board.preprocessBevelInfo(bevel_attitude = BEVEL_ATTITUDE, bevel_size = BEVEL_SIZE)
+		self._board.preprocessAllSunInfo(sun_angle = SUN_ANGLE, sun_attitude = SUN_ATTITUDE)
+
+		# Randomly assigning an initial tile selection to each polygon
+		# Initialize the needed storage
+		self._tiles_per_index = []
+		# Create the list of currently selectable tiles given the current game mode
+		possible_tiles = []
+		for tile in TILE_COUNTS_PER_MODE[self._game_mode]:
+			for _ in range(TILE_COUNTS_PER_MODE[self._game_mode][tile]):
+				possible_tiles.append(tile)
+		# Perform the tiling assignment to each polygon
+		for polygon_index in range(self._n_polygons):
+			# Select and tile and remove it from the list of possible tiles
+			tile_index = random.randint(len(possible_tiles))
+			selected_tile = possible_tiles.pop(tile_index)
+			# Assign this tile to this polygon
+			self._tiles_per_index.append(selected_tile)
+
+		# Compute the adjacency matrix between the polygons on the board
+		self._adjacency_matrix = zeros((self._n_polygons, self._n_polygons), dtype = int)
+
+	### Define functions related to probability distributions for the current tiling ###
+
+	### Define a function for rendering the tiling ###
+	def render(self, dpi:int) -> Image.Image:
+		# Return a PIL image render of the tiling for the Catan board
+		# Assign the correct colors to each polygon
+		for polygon_index in range(self._n_polygons):
+			selected_tile = self._tiles_per_index[polygon_index]
+			self._board.setTintShade(tint_shade = COLORS_PER_TILE[selected_tile], polygon_index = polygon_index)
+
+		# Create the rendered image and return it
+		return self._board.render(dpi = dpi)
+
+
+############################################
+### Define the board generator GUI class ###
+############################################
+# Create the decorator needed for making the attributes private
+catan_generator_gui_decorator = private_attributes_dec("_used_canvas",					# class variables
+												       "_used_window",
+												       "_BACKGROUND_COLOR_DARK",		# class constants
+												       "_BACKGROUND_COLOR_LIGHT",
+												       "_FOREGROUND_COLOR_DARK",
+												       "_FOREGROUND_COLOR_LIGHT")
+
+# Define the class with private attributes
+@catan_generator_gui_decorator
+class CatanGeneratorGUI:
 	### Define class constants ###
 	_BACKGROUND_COLOR_DARK = RGB("#cccccc")
 	_BACKGROUND_COLOR_LIGHT = RGB("#eeeeee")
@@ -215,44 +316,11 @@ class CatanGenerator:
 						br_y_parameter = 1.00,
 						fill_color = self._BACKGROUND_COLOR_LIGHT)
 
-CatanGenerator()
-
 #game_mode = "Original: 3-4 Player"
 #game_mode = "Original: 5-6 Player"
 #game_mode = "Seafarers: 3-4 Player"
 game_mode = "Seafarers: 5-6 Player"
 
 dpi = 600
-#tint_shade = RGB((255, 255, 255))
 
-n_polygons = sum(ROW_COUNTS_PER_MODE[game_mode])
-all_polygons = [HEXAGON_REGULAR_TALL for _ in range(n_polygons)]
-
-x_shift_per_polygon = []
-y_shift_per_polygon = []
-for row_index in range(len(ROW_COUNTS_PER_MODE[game_mode])):
-	y_shift = 3 / 2 * row_index
-	for col_index in range(ROW_COUNTS_PER_MODE[game_mode][row_index]):
-		x_shift = sqrt(3) * (col_index - ROW_COUNTS_PER_MODE[game_mode][row_index] / 2)
-		x_shift_per_polygon.append(x_shift)
-		y_shift_per_polygon.append(y_shift)
-
-board = Board(n_polygons = n_polygons,
-			  all_polygons = all_polygons,
-			  x_shift_per_polygon = x_shift_per_polygon,
-			  y_shift_per_polygon = y_shift_per_polygon)
-
-board.preprocessBevelInfo(bevel_attitude = BEVEL_ATTITUDE, bevel_size = BEVEL_SIZE)
-board.preprocessAllSunInfo(sun_angle = SUN_ANGLE, sun_attitude = SUN_ATTITUDE)
-
-from numpy import random
-possible_tiles = []
-for tile in TILE_COUNTS_PER_MODE[game_mode]:
-	for _ in range(TILE_COUNTS_PER_MODE[game_mode][tile]):
-		possible_tiles.append(tile)
-for polygon_index in range(n_polygons):
-	tile_index = random.randint(len(possible_tiles))
-	selected_tile = possible_tiles.pop(tile_index)
-	board.setTintShade(tint_shade = COLORS_PER_TILE[selected_tile], polygon_index = polygon_index)
-
-board.render(dpi = dpi).show()
+CatanGeneratorTiling(game_mode = game_mode).render(dpi = dpi).show()
