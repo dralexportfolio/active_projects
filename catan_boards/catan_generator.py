@@ -20,7 +20,7 @@ from Board import Board
 from color_helper import RGB
 from Polygon import HEXAGON_REGULAR_TALL, Polygon
 from tkinter_helper import createCanvas, createRectangle, createWindow
-from type_helper import isDictionaryWithNumericValues, isDictionaryWithStringKeys, isNumeric, tolerantlyCompare
+from type_helper import isNumeric, tolerantlyCompare
 
 # External modules
 from math import log2, sqrt
