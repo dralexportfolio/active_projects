@@ -47,7 +47,7 @@ n_hexagons_per_side = 5
 all_tile_types = ["brick", "sheep", "stone", "wheat", "wood", "desert", "gold", "water"]
 
 # Tile types and likelihoods
-likelihood_per_tile = {
+likelihoods_per_tile = {
 	"brick": 0.1,
 	"sheep": 0.1,
 	"stone": 0.1,
@@ -59,7 +59,7 @@ likelihood_per_tile = {
 }
 
 # Define the colors used for each tile
-color_per_tile = {
+colors_per_tile = {
 	"brick": RGB((180, 60, 30)),
 	"sheep": RGB((20, 200, 50)),
 	"stone": RGB((127, 127, 127)),
@@ -256,7 +256,7 @@ for sim_index in tqdm(range(n_simulations)):
 	# Create a random initial tiling of the board using the probabilities
 	tile_per_polygon = []
 	for _ in range(n_polygons):
-		selected_tile_type = random.choice(a = list(likelihood_per_tile.keys()), p = list(likelihood_per_tile.values()))
+		selected_tile_type = random.choice(a = list(likelihoods_per_tile.keys()), p = list(likelihoods_per_tile.values()))
 		tile_per_polygon.append(selected_tile_type)
 
 	# Get the tile types which actually appear in this particular tiling

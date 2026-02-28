@@ -33,17 +33,17 @@ from PrivateAttributesDecorator import private_attributes_dec
 ### Define important shared settings for the game ###
 #####################################################
 # Define the default bevel and sun information
-BEVEL_ATTITUDE = 25
-BEVEL_SIZE = 0.1
-SUN_ANGLE = 120
-SUN_ATTITUDE = 35
+bevel_attitude = 25
+bevel_size = 0.1
+sun_angle = 120
+sun_attitude = 35
 
 # Define the lists of keys shared between multiple dictionaries
-ALL_GAME_MODES = ["Original: 3-4 Player", "Original: 5-6 Player", "Seafarers: 3-4 Player", "Seafarers: 5-6 Player"]
-ALL_TILE_TYPES = ["brick", "sheep", "stone", "wheat", "wood", "desert", "gold", "water"]
+all_game_modes = ["Original: 3-4 Player", "Original: 5-6 Player", "Seafarers: 3-4 Player", "Seafarers: 5-6 Player"]
+all_tile_types = ["brick", "sheep", "stone", "wheat", "wood", "desert", "gold", "water"]
 
 # Define a dictionary of number counts for each game mode
-NUMBER_COUNTS_PER_MODE = {
+number_counts_per_mode = {
 	"Original: 3-4 Player": {		# 20 total
 		2: 1,
 		3: 2,
@@ -95,7 +95,7 @@ NUMBER_COUNTS_PER_MODE = {
 }
 
 # Define a dictionary of tile count per row for each game mode
-ROW_COUNTS_PER_MODE = {
+row_counts_per_mode = {
 	"Original: 3-4 Player": [3, 4, 5, 4, 3],
 	"Original: 5-6 Player": [3, 4, 5, 6, 5, 4, 3],
 	"Seafarers: 3-4 Player": [5, 6, 7, 6, 7, 6, 5],
@@ -103,7 +103,7 @@ ROW_COUNTS_PER_MODE = {
 }
 
 # Define a dictionary of tile count per type for each game mode
-TILE_COUNTS_PER_MODE = {
+tile_counts_per_mode = {
 	"Original: 3-4 Player": {		# 19 total, 18 with numbers
 		"brick": 3,
 		"sheep": 4,
@@ -147,7 +147,7 @@ TILE_COUNTS_PER_MODE = {
 }
 
 # Define the colors used for each tile
-COLORS_PER_TILE = {
+colors_per_tile = {
 	"brick": RGB((180, 60, 30)),
 	"sheep": RGB((20, 200, 50)),
 	"stone": RGB((127, 127, 127)),
@@ -159,9 +159,9 @@ COLORS_PER_TILE = {
 }
 
 # Define any additional object colors
-CIRCLE_COLOR = RGB((210, 170, 110))
-LOW_PROB_NUMBER_COLOR = RGB((0, 0, 0))
-HIGH_PROB_NUMBER_COLOR = RGB((200, 0, 0))
+circle_color = RGB((210, 170, 110))
+low_prob_number_color = RGB((0, 0, 0))
+high_prob_number_color = RGB((200, 0, 0))
 
 # Define a marginal Shannon entropy function
 def computeMarginalEntropy(prob_value:Any) -> float:
@@ -197,7 +197,7 @@ class CatanGeneratorTiling:
 	### Initialize the class ###
 	def __init__(self, game_mode:str):
 		# Verify the inputs
-		assert game_mode in ALL_GAME_MODES, "CatanGeneratorTiling::__init__: Provided value for 'game_mode' must be contained in the list ALL_GAME_MODES"
+		assert game_mode in all_game_modes, "CatanGeneratorTiling::__init__: Provided value for 'game_mode' must be contained in the list all_game_modes"
 
 		# Store the provided values
 		self._game_mode = game_mode
@@ -208,7 +208,7 @@ class CatanGeneratorTiling:
 	### Define a function for randomly initializing the tiling information ###
 	def _initializeTiling(self):
 		# Set the number of polygons based on the game mode
-		self._n_polygons = sum(ROW_COUNTS_PER_MODE[self._game_mode])
+		self._n_polygons = sum(row_counts_per_mode[self._game_mode])
 
 		# Create a list of all polygons objects to be passed to the Board object
 		all_polygons = [HEXAGON_REGULAR_TALL for _ in range(self._n_polygons)]
@@ -216,10 +216,10 @@ class CatanGeneratorTiling:
 		# Create the lists of x-value and y-value shifts associated with each polygon
 		x_shift_per_polygon = []
 		y_shift_per_polygon = []
-		for row_index in range(len(ROW_COUNTS_PER_MODE[self._game_mode])):
+		for row_index in range(len(row_counts_per_mode[self._game_mode])):
 			y_shift = 3 / 2 * row_index
-			for col_index in range(ROW_COUNTS_PER_MODE[self._game_mode][row_index]):
-				x_shift = sqrt(3) * (col_index - ROW_COUNTS_PER_MODE[self._game_mode][row_index] / 2)
+			for col_index in range(row_counts_per_mode[self._game_mode][row_index]):
+				x_shift = sqrt(3) * (col_index - row_counts_per_mode[self._game_mode][row_index] / 2)
 				x_shift_per_polygon.append(x_shift)
 				y_shift_per_polygon.append(y_shift)
 
@@ -230,16 +230,16 @@ class CatanGeneratorTiling:
 			  				y_shift_per_polygon = y_shift_per_polygon)
 
 		# Apply the selected bevel and sun information to the board
-		self._board.preprocessBevelInfo(bevel_attitude = BEVEL_ATTITUDE, bevel_size = BEVEL_SIZE)
-		self._board.preprocessAllSunInfo(sun_angle = SUN_ANGLE, sun_attitude = SUN_ATTITUDE)
+		self._board.preprocessBevelInfo(bevel_attitude = bevel_attitude, bevel_size = bevel_size)
+		self._board.preprocessAllSunInfo(sun_angle = sun_angle, sun_attitude = sun_attitude)
 
 		# Randomly assigning an initial tile selection to each polygon
 		# Initialize the needed storage
 		self._tile_per_polygon = []
 		# Create the list of currently selectable tiles given the current game mode
 		possible_tiles = []
-		for tile_type in TILE_COUNTS_PER_MODE[self._game_mode]:
-			for _ in range(TILE_COUNTS_PER_MODE[self._game_mode][tile_type]):
+		for tile_type in tile_counts_per_mode[self._game_mode]:
+			for _ in range(tile_counts_per_mode[self._game_mode][tile_type]):
 				possible_tiles.append(tile_type)
 		# Perform the tiling assignment to each polygon
 		for polygon_index in range(self._n_polygons):
@@ -250,7 +250,7 @@ class CatanGeneratorTiling:
 			self._tile_per_polygon.append(selected_tile_type)
 
 		# Get the tile types which actually appear in this particular tiling, also compute the resulting maximum entropy
-		self._needed_tile_types = [tile_type for tile_type in ALL_TILE_TYPES if tile_type in self._tile_per_polygon]
+		self._needed_tile_types = [tile_type for tile_type in all_tile_types if tile_type in self._tile_per_polygon]
 		self._maximum_entropy = log2(len(self._needed_tile_types))
 
 		# Determine the indices adjacent to each polygon on the board
@@ -422,7 +422,7 @@ class CatanGeneratorTiling:
 		# Assign the correct colors to each polygon
 		for polygon_index in range(self._n_polygons):
 			selected_tile_type = self._tile_per_polygon[polygon_index]
-			self._board.setTintShade(tint_shade = COLORS_PER_TILE[selected_tile_type], polygon_index = polygon_index)
+			self._board.setTintShade(tint_shade = colors_per_tile[selected_tile_type], polygon_index = polygon_index)
 
 		# Create the rendered image and return it
 		return self._board.render(dpi = dpi)
