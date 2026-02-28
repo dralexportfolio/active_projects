@@ -378,43 +378,24 @@ class CatanGeneratorTiling:
 		# Compute the updated entropy values
 		new_entropy_by_tile = self._computeEntropyPerTileType()
 
-		# Reject the change if it lowered the weighted total entropy (if needed)
+		# Reject the change if it raised the mean squared error (if needed)
 		if reject_flag == True:
-			#'''
-			old_squared_error = 0
-			new_squared_error = 0
+			# Compute the mean squared error for entropy values (i.e. water should be low, all others should be high)
+			old_mean_squared_error = 0
+			new_mean_squared_error = 0
+			denominator = len(self._needed_tile_types)
 			for tile_type in self._needed_tile_types:
 				if tile_type == "water":
-					old_squared_error += old_entropy_by_tile[tile_type]**2
-					new_squared_error += new_entropy_by_tile[tile_type]**2
+					old_mean_squared_error += old_entropy_by_tile[tile_type]**2 / denominator
+					new_mean_squared_error += new_entropy_by_tile[tile_type]**2 / denominator
 				else:
-					old_squared_error += (self._maximum_entropy - old_entropy_by_tile[tile_type])**2
-					new_squared_error += (self._maximum_entropy - new_entropy_by_tile[tile_type])**2
-			if new_squared_error > old_squared_error:
+					old_mean_squared_error += (self._maximum_entropy - old_entropy_by_tile[tile_type])**2 / denominator
+					new_mean_squared_error += (self._maximum_entropy - new_entropy_by_tile[tile_type])**2 / denominator
+
+			# Revert the change due to the mean squared error going up (if needed)
+			if new_mean_squared_error > old_mean_squared_error:
 				self._tile_per_polygon[polygon_index_1] = tile_type_1
 				self._tile_per_polygon[polygon_index_2] = tile_type_2
-			else:
-				print(new_entropy_by_tile)
-
-			'''
-			# Compute the original and updated total weighted entropy values
-			old_total_weighted_entropy = 0
-			new_total_weighted_entropy = 0
-			for tile_type in self._needed_tile_types:
-				if tile_type == "water":
-					old_total_weighted_entropy -= old_entropy_by_tile[tile_type]
-					new_total_weighted_entropy -= new_entropy_by_tile[tile_type]
-				else:
-					old_total_weighted_entropy += old_entropy_by_tile[tile_type]
-					new_total_weighted_entropy += new_entropy_by_tile[tile_type]
-
-			# Revert the change in the case that the entropy went down (if needed)
-			if new_total_weighted_entropy < old_total_weighted_entropy:
-				self._tile_per_polygon[polygon_index_1] = tile_type_1
-				self._tile_per_polygon[polygon_index_2] = tile_type_2
-			else:
-				print(new_entropy_by_tile)
-			'''
 
 	### Define a function for rendering the tiling ###
 	def render(self, dpi:int) -> Image.Image:
@@ -488,11 +469,15 @@ class CatanGeneratorGUI:
 #game_mode = "Seafarers: 3-4 Player"
 game_mode = "Seafarers: 5-6 Player"
 
+from tqdm import tqdm
+p_reject = 0.98
 dpi = 300
 
 tiling = CatanGeneratorTiling(game_mode = game_mode)
 tiling.render(dpi = dpi).show()
-from tqdm import tqdm
-for _ in tqdm(range(1000)):
-	tiling.swapTiles(skew_power = 1, reject_flag = True)
+
+for index in tqdm(range(1000)):
+	reject_flag = random.rand() < p_reject
+	tiling.swapTiles(skew_power = 1, reject_flag = reject_flag)
+
 tiling.render(dpi = dpi).show()
