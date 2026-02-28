@@ -18,7 +18,7 @@ path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 # Internal modules
 from Board import Board
 from color_helper import RGB
-from Polygon import HEXAGON_REGULAR_TALL, Polygon
+from Polygon import HEXAGON_REGULAR_TALL
 from tkinter_helper import createCanvas, createRectangle, createWindow
 from type_helper import isNumeric, tolerantlyCompare
 
@@ -183,30 +183,17 @@ def computeMarginalEntropy(prob_value:Any) -> float:
 # Create the decorator needed for making the attributes private
 catan_generator_tiling_decorator = private_attributes_dec("_adjacency_matrix",					# class variables
 														  "_board",
+														  "_maximum_entropy",
 														  "_n_polygons",
+														  "_needed_tile_types",
 														  "_neighbor_indices_per_polygon",
 														  "_tiles_per_index",
-														  "_ENTROPY_WEIGHTS",					# class constants
-														  "_PROBABILITY_POWER",
 														  "_computeEntropyPerTileType",			# private functions
 														  "_initializeTiling")
 
 # Define the class with private attributes
 @catan_generator_tiling_decorator
 class CatanGeneratorTiling:
-	### Define class constants ###
-	_ENTROPY_WEIGHT_BY_TILE = {
-		"brick": 10,
-		"sheep": 10,
-		"stone": 10,
-		"wheat": 10,
-		"wood": 10,
-		"desert": 10,
-		"gold": 10,
-		"water": -1
-	}
-	_PROBABILITY_POWER = 2
-
 	### Initialize the class ###
 	def __init__(self, game_mode:str):
 		# Verify the inputs
@@ -220,7 +207,7 @@ class CatanGeneratorTiling:
 
 	### Define a function for randomly initializing the tiling information ###
 	def _initializeTiling(self):
-		# Set the number of polygons based onm the game mode
+		# Set the number of polygons based on the game mode
 		self._n_polygons = sum(ROW_COUNTS_PER_MODE[self._game_mode])
 
 		# Create a list of all polygons objects to be passed to the Board object
@@ -262,6 +249,10 @@ class CatanGeneratorTiling:
 			# Assign this tile to this polygon
 			self._tile_per_polygon.append(selected_tile_type)
 
+		# Get the tile types which actually appear in this particular tiling, also compute the resulting maximum entropy
+		self._needed_tile_types = [tile_type for tile_type in ALL_TILE_TYPES if tile_type in self._tile_per_polygon]
+		self._maximum_entropy = log2(len(self._needed_tile_types))
+
 		# Determine the indices adjacent to each polygon on the board
 		# Initialize the needed storage
 		self._neighbor_indices_per_polygon = {}
@@ -289,22 +280,19 @@ class CatanGeneratorTiling:
 	### Define a function for computing the Shannon entropy of neighbor distributions for each tile type ###
 	def _computeEntropyPerTileType(self) -> dict:
 		# Compute the Shannon entropy of the probability distributions over possible neighbors for each tile type
-		# Get the tile types which actually appear in this particular tiling
-		needed_tile_types = [tile_type for tile_type in ALL_TILE_TYPES if tile_type in self._tile_per_polygon]
-
-		# Initialize the needed storage dictionaries
-		# Initialize the main dictionaries
+		# Initialize all the storage dictionaries needed for this function
+		# Create the dictionaries
 		count_results = {}
 		probability_results = {}
 		entropy_by_tile = {}
 		# Loop over the needed tile types and add more information
-		for tile_type_1 in needed_tile_types:
+		for tile_type_1 in self._needed_tile_types:
 			# Add in the storage at this level
 			count_results[tile_type_1] = {}
 			probability_results[tile_type_1] = {}
 			entropy_by_tile[tile_type_1] = 0
 			# Loop over secondary tile types for the counts and probabilities
-			for tile_type_2 in needed_tile_types:
+			for tile_type_2 in self._needed_tile_types:
 				count_results[tile_type_1][tile_type_2] = 0
 				probability_results[tile_type_1][tile_type_2] = 0
 
@@ -316,86 +304,64 @@ class CatanGeneratorTiling:
 				count_results[tile_type_1][tile_type_2] += 1
 
 		# Convert the neighbor counts to probabilities of neighbor types
-		for tile_type_1 in needed_tile_types:
+		for tile_type_1 in self._needed_tile_types:
 			n_neighbors = sum(list(count_results[tile_type_1].values()))
-			for tile_type_2 in needed_tile_types:
+			for tile_type_2 in self._needed_tile_types:
 				probability_results[tile_type_1][tile_type_2] = count_results[tile_type_1][tile_type_2] / n_neighbors
 
 		# Compute the Shannon entropy of each tile type's distribution
-		for tile_type_1 in needed_tile_types:
-			for tile_type_2 in needed_tile_types:
+		for tile_type_1 in self._needed_tile_types:
+			for tile_type_2 in self._needed_tile_types:
 				entropy_by_tile[tile_type_1] += computeMarginalEntropy(probability_results[tile_type_1][tile_type_2])
 
 		# Return the results
 		return entropy_by_tile
 
 	### Define a function for swapping two tiles in an attempt to improve the tiling ###
-	def swapTiles(self, reject_flag:bool = True):
+	def swapTiles(self, skew_power:Any = 1, reject_flag:bool = False):
 		# Swap two tiles in an attempt to improve relevant entropy values
 		# Verify the inputs
+		assert isNumeric(skew_power, include_numpy_flag = True) == True, "CatanGeneratorTiling::swapTiles: Provided value for 'skew_power' must be numeric"
+		assert 0 <= skew_power and skew_power < float("inf"), "CatanGeneratorTiling::swapTiles: Provided value for 'skew_power' must be non-negative and finite"
 		assert type(reject_flag) == bool, "CatanGeneratorTiling::swapTiles: Provided value for 'reject_flag' must be a bool object"
 
 		# Compute the current entropy values
-		entropy_by_tile = self._computeEntropyPerTileType()
+		old_entropy_by_tile = self._computeEntropyPerTileType()
 
-		# Compute the theoretical maximum entropy for these distributions
-		maximum_entropy = log2(len(entropy_by_tile))
+		# Compute the efficiency (i.e. normalized entropy) of each tile type's distribution
+		efficiency_by_tile = {}
+		for tile_type in self._needed_tile_types:
+			efficiency_by_tile[tile_type] = old_entropy_by_tile[tile_type] / self._maximum_entropy
 
-		# Compute the normalized entropy results based on the signs of the associated weights
-		normalized_entropy_by_tile = {}
-		for tile_type in entropy_by_tile:
-			current_weight = self._ENTROPY_WEIGHT_BY_TILE[tile_type]
-			if current_weight > 0:
-				normalized_entropy_by_tile[tile_type] = entropy_by_tile[tile_type] / maximum_entropy
-			elif current_weight < 0:
-				normalized_entropy_by_tile[tile_type] = 1 - entropy_by_tile[tile_type] / maximum_entropy
+		# Compute the probability values for the 1st and 2nd tile type distributions using the provided skew power
+		# Initialize the needed dictionaries
+		pseudo_probability_1_by_tile = {}
+		pseudo_probability_2_by_tile = {}
+		probability_1_by_tile = {}
+		probability_2_by_tile = {}
+		# Loop over the tile types to get the pseudo-probabilities
+		for tile_type in self._needed_tile_types:
+			if tile_type == "water":
+				# When efficiency is high, make water likely for tile type 1 and unlikely for tile type 2
+				pseudo_probability_1_by_tile[tile_type] = efficiency_by_tile[tile_type]**skew_power
+				pseudo_probability_2_by_tile[tile_type] = (1 - efficiency_by_tile[tile_type])**skew_power
 			else:
-				normalized_entropy_by_tile[tile_type] = 0
+				# When efficiency is high, make this type likely for tile type 1 and unlikely for tile type 2
+				pseudo_probability_1_by_tile[tile_type] = (1 - efficiency_by_tile[tile_type])**skew_power
+				pseudo_probability_2_by_tile[tile_type] = efficiency_by_tile[tile_type]**skew_power
+		# Convert the pseudo-probabilities to probabilities by normalizing
+		normalizer_1 = sum(list(pseudo_probability_1_by_tile.values()))
+		normalizer_2 = sum(list(pseudo_probability_1_by_tile.values()))
+		for tile_type in self._needed_tile_types:
+			probability_1_by_tile[tile_type] = pseudo_probability_1_by_tile[tile_type] / normalizer_1
+			probability_2_by_tile[tile_type] = pseudo_probability_2_by_tile[tile_type] / normalizer_2
 
-		# Initialize the dictionary of probabilities
-		probability_by_tile = {}
-
-		# Handle the various cases for computing the probabilities based on tile type
-		if self._PROBABILITY_POWER == float("inf"):
-			# Determine the tile types which have non-zero normalized entropy
-			allowed_tile_types = [tile_type for tile_type in normalized_entropy_by_tile if normalized_entropy_by_tile[tile_type] > 0]
-
-			# Uniformly set the probabilities of each allowed tile type
-			for tile_type in normalized_entropy_by_tile:
-				if tile_type in allowed_tile_types:
-					probability_by_tile[tile_type] = 1 / len(allowed_tile_types)
-				else:
-					probability_by_tile[tile_type] = 0
-		else:
-			# Compute the theoretical maximum entropy for these distributions
-			maximum_entropy = log2(len(entropy_by_tile))
-
-			# Compute the pseudo-probabilities for each tile type using the normalized entropies
-			pseudo_probability_by_tile = {}
-			for tile_type in entropy_by_tile:
-				if normalized_entropy_by_tile[tile_type] == 0 and self._PROBABILITY_POWER == 0:
-					pseudo_probability_by_tile[tile_type] = 0
-				else:
-					pseudo_probability_by_tile[tile_type] = normalized_entropy_by_tile[tile_type]**self._PROBABILITY_POWER
-
-			# Convert the pseudo-probabilities to probability values
-			total_pseudo_probability = sum(list(pseudo_probability_by_tile.values()))
-			for tile_type in pseudo_probability_by_tile:
-				probability_by_tile[tile_type] = pseudo_probability_by_tile[tile_type] / total_pseudo_probability
-
-		# Randomly select two tile types to swap
-		# Select the 1st tile type and remove it from the dictionary
-		tile_type_1 = random.choice(a = list(probability_by_tile.keys()), p = list(probability_by_tile.values()))
-		del probability_by_tile[tile_type_1]
-		# Invert the remaining probabilities by subtracting from 1
-		for tile_type in probability_by_tile:
-			probability_by_tile[tile_type] = 1 - probability_by_tile[tile_type]
-		# Renormalize the values to be probabilities again
-		normalizer = sum(list(probability_by_tile.values()))
-		for tile_type in probability_by_tile:
-			probability_by_tile[tile_type] /= normalizer
-		# Select the 2nd tile type
-		tile_type_2 = random.choice(a = list(probability_by_tile.keys()), p = list(probability_by_tile.values()))
+		# Randomly select the tile types to use in the swap
+		while True:
+			tile_type_1 = random.choice(a = list(probability_1_by_tile.keys()), p = list(probability_1_by_tile.values()))
+			tile_type_2 = random.choice(a = list(probability_1_by_tile.keys()), p = list(probability_1_by_tile.values()))
+			if tile_type_1 != tile_type_2:
+				break
 
 		# Get the indices of polygons associated with these tile types
 		possible_indices_1 = [polygon_index for polygon_index in range(self._n_polygons) if self._tile_per_polygon[polygon_index] == tile_type_1]
@@ -414,14 +380,41 @@ class CatanGeneratorTiling:
 
 		# Reject the change if it lowered the weighted total entropy (if needed)
 		if reject_flag == True:
-			# Compute the original and update total weighted entropy values
-			total_entropy = sum([self._ENTROPY_WEIGHT_BY_TILE[tile_type] * entropy_by_tile[tile_type] for tile_type in entropy_by_tile])
-			new_total_entropy = sum([self._ENTROPY_WEIGHT_BY_TILE[tile_type] * new_entropy_by_tile[tile_type] for tile_type in entropy_by_tile])
-
-			# Revert the change (if needed)
-			if new_total_entropy < total_entropy:
+			#'''
+			old_squared_error = 0
+			new_squared_error = 0
+			for tile_type in self._needed_tile_types:
+				if tile_type == "water":
+					old_squared_error += old_entropy_by_tile[tile_type]**2
+					new_squared_error += new_entropy_by_tile[tile_type]**2
+				else:
+					old_squared_error += (self._maximum_entropy - old_entropy_by_tile[tile_type])**2
+					new_squared_error += (self._maximum_entropy - new_entropy_by_tile[tile_type])**2
+			if new_squared_error > old_squared_error:
 				self._tile_per_polygon[polygon_index_1] = tile_type_1
 				self._tile_per_polygon[polygon_index_2] = tile_type_2
+			else:
+				print(new_entropy_by_tile)
+
+			'''
+			# Compute the original and updated total weighted entropy values
+			old_total_weighted_entropy = 0
+			new_total_weighted_entropy = 0
+			for tile_type in self._needed_tile_types:
+				if tile_type == "water":
+					old_total_weighted_entropy -= old_entropy_by_tile[tile_type]
+					new_total_weighted_entropy -= new_entropy_by_tile[tile_type]
+				else:
+					old_total_weighted_entropy += old_entropy_by_tile[tile_type]
+					new_total_weighted_entropy += new_entropy_by_tile[tile_type]
+
+			# Revert the change in the case that the entropy went down (if needed)
+			if new_total_weighted_entropy < old_total_weighted_entropy:
+				self._tile_per_polygon[polygon_index_1] = tile_type_1
+				self._tile_per_polygon[polygon_index_2] = tile_type_2
+			else:
+				print(new_entropy_by_tile)
+			'''
 
 	### Define a function for rendering the tiling ###
 	def render(self, dpi:int) -> Image.Image:
@@ -495,11 +488,11 @@ class CatanGeneratorGUI:
 #game_mode = "Seafarers: 3-4 Player"
 game_mode = "Seafarers: 5-6 Player"
 
-dpi = 600
+dpi = 300
 
 tiling = CatanGeneratorTiling(game_mode = game_mode)
 tiling.render(dpi = dpi).show()
 from tqdm import tqdm
-for _ in tqdm(range(10000)):
-	tiling.swapTiles()
+for _ in tqdm(range(1000)):
+	tiling.swapTiles(skew_power = 1, reject_flag = True)
 tiling.render(dpi = dpi).show()

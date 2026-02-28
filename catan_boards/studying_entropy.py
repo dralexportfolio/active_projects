@@ -353,11 +353,15 @@ for row_index in range(n_rows):
 
 # Set the color scale and color bound values as needed
 if reject_flag == False:
-	color_scale = [[index / 100, customSpectrum(parameter = 1 - index / 100, rgb_spectrum = ALL_PLOTLY_COLOR_SCALES_BY_TYPE["diverging"]["Portland"]).asStringTuple()] for index in range(101)]
+	rgb_spectrum = ALL_PLOTLY_COLOR_SCALES_BY_TYPE["diverging"]["Portland"]
+	color_function = lambda index: customSpectrum(parameter = 1 - index / 100, rgb_spectrum = rgb_spectrum)
+	color_scale = [[index / 100, color_function(index).asStringTuple()] for index in range(101)]
 	c_min = -max_abs_delta
 	c_max = max_abs_delta
 else:
-	color_scale = [[index / 100, customSpectrum(parameter = index / 100, rgb_spectrum = ALL_PLOTLY_COLOR_SCALES_BY_TYPE["sequential"]["Blues"]).asStringTuple()] for index in range(101)]
+	rgb_spectrum = ALL_PLOTLY_COLOR_SCALES_BY_TYPE["sequential"]["Blues"]
+	color_function = lambda index: customSpectrum(parameter = index / 100, rgb_spectrum = rgb_spectrum)
+	color_scale = [[index / 100, color_function(index).asStringTuple()] for index in range(101)]
 	c_min = 0
 	c_max = max_abs_delta
 
