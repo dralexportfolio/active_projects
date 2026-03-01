@@ -151,14 +151,14 @@ tile_counts_per_mode = {
 
 # Define the target efficiency values for each tile
 target_efficiency_per_tile = {
-	"brick": 0.9,
-	"sheep": 0.9,
-	"stone": 0.9,
-	"wheat": 0.9,
-	"wood": 0.9,
-	"desert": 0.9,
-	"gold": 0.9,
-	"water": 0.6
+	"brick": 0.95,
+	"sheep": 0.95,
+	"stone": 0.95,
+	"wheat": 0.95,
+	"wood": 0.95,
+	"desert": 0.95,
+	"gold": 0.95,
+	"water": 0.55
 }
 
 # Define the colors used for each tile
@@ -513,7 +513,7 @@ dpi = 300
 tiling = CatanGeneratorTiling(game_mode = game_mode)
 tiling.render(dpi = dpi).show()
 
-for index in tqdm(range(10000)):
+for index in tqdm(range(3000)):
 	tiling.swapTiles(skew_power = float("inf"), reject_flag = True)
 
 tiling.render(dpi = dpi).show()
