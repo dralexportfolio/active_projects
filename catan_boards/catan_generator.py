@@ -32,6 +32,9 @@ from PrivateAttributesDecorator import private_attributes_dec
 #####################################################
 ### Define important shared settings for the game ###
 #####################################################
+# Define the random seed to use
+seed = None
+
 # Define the default bevel and sun information
 bevel_attitude = 25
 bevel_size = 0.1
@@ -146,6 +149,18 @@ tile_counts_per_mode = {
 	}
 }
 
+# Define the target efficiency values for each tile
+target_efficiency_per_tile = {
+	"brick": 0.9,
+	"sheep": 0.9,
+	"stone": 0.9,
+	"wheat": 0.9,
+	"wood": 0.9,
+	"desert": 0.9,
+	"gold": 0.9,
+	"water": 0.5
+}
+
 # Define the colors used for each tile
 colors_per_tile = {
 	"brick": RGB((180, 60, 30)),
@@ -207,6 +222,11 @@ class CatanGeneratorTiling:
 
 	### Define a function for randomly initializing the tiling information ###
 	def _initializeTiling(self):
+		# Perform all steps necessary for obtaining an initial tiling
+		# Set the random seed (if needed)
+		if seed is not None:
+			random.seed(seed = seed)
+
 		# Set the number of polygons based on the game mode
 		self._n_polygons = sum(row_counts_per_mode[self._game_mode])
 
@@ -322,7 +342,7 @@ class CatanGeneratorTiling:
 		# Swap two tiles in an attempt to improve relevant entropy values
 		# Verify the inputs
 		assert isNumeric(skew_power, include_numpy_flag = True) == True, "CatanGeneratorTiling::swapTiles: Provided value for 'skew_power' must be numeric"
-		assert 0 <= skew_power and skew_power < float("inf"), "CatanGeneratorTiling::swapTiles: Provided value for 'skew_power' must be non-negative and finite"
+		assert 0 <= skew_power, "CatanGeneratorTiling::swapTiles: Provided value for 'skew_power' must be non-negative"
 		assert type(reject_flag) == bool, "CatanGeneratorTiling::swapTiles: Provided value for 'reject_flag' must be a bool object"
 
 		# Compute the current entropy values
@@ -343,15 +363,35 @@ class CatanGeneratorTiling:
 		for tile_type in self._needed_tile_types:
 			if tile_type == "water":
 				# When efficiency is high, make water likely for tile type 1 and unlikely for tile type 2
-				pseudo_probability_1_by_tile[tile_type] = efficiency_by_tile[tile_type]**skew_power
-				pseudo_probability_2_by_tile[tile_type] = (1 - efficiency_by_tile[tile_type])**skew_power
+				if skew_power < float("inf"):
+					pseudo_probability_1_by_tile[tile_type] = efficiency_by_tile[tile_type]**skew_power
+					pseudo_probability_2_by_tile[tile_type] = (1 - efficiency_by_tile[tile_type])**skew_power
+				elif efficiency_by_tile[tile_type] == 0:
+					pseudo_probability_1_by_tile[tile_type] = 0
+					pseudo_probability_2_by_tile[tile_type] = 1
+				elif efficiency_by_tile[tile_type] == 1:
+					pseudo_probability_1_by_tile[tile_type] = 1
+					pseudo_probability_2_by_tile[tile_type] = 0
+				else:
+					pseudo_probability_1_by_tile[tile_type] = 1
+					pseudo_probability_2_by_tile[tile_type] = 1
 			else:
 				# When efficiency is high, make this type likely for tile type 1 and unlikely for tile type 2
-				pseudo_probability_1_by_tile[tile_type] = (1 - efficiency_by_tile[tile_type])**skew_power
-				pseudo_probability_2_by_tile[tile_type] = efficiency_by_tile[tile_type]**skew_power
+				if skew_power < float("inf"):
+					pseudo_probability_1_by_tile[tile_type] = (1 - efficiency_by_tile[tile_type])**skew_power
+					pseudo_probability_2_by_tile[tile_type] = efficiency_by_tile[tile_type]**skew_power
+				elif efficiency_by_tile[tile_type] == 0:
+					pseudo_probability_1_by_tile[tile_type] = 1
+					pseudo_probability_2_by_tile[tile_type] = 0
+				elif efficiency_by_tile[tile_type] == 1:
+					pseudo_probability_1_by_tile[tile_type] = 0
+					pseudo_probability_2_by_tile[tile_type] = 1
+				else:
+					pseudo_probability_1_by_tile[tile_type] = 1
+					pseudo_probability_2_by_tile[tile_type] = 1
 		# Convert the pseudo-probabilities to probabilities by normalizing
 		normalizer_1 = sum(list(pseudo_probability_1_by_tile.values()))
-		normalizer_2 = sum(list(pseudo_probability_1_by_tile.values()))
+		normalizer_2 = sum(list(pseudo_probability_2_by_tile.values()))
 		for tile_type in self._needed_tile_types:
 			probability_1_by_tile[tile_type] = pseudo_probability_1_by_tile[tile_type] / normalizer_1
 			probability_2_by_tile[tile_type] = pseudo_probability_2_by_tile[tile_type] / normalizer_2
@@ -359,7 +399,7 @@ class CatanGeneratorTiling:
 		# Randomly select the tile types to use in the swap
 		while True:
 			tile_type_1 = random.choice(a = list(probability_1_by_tile.keys()), p = list(probability_1_by_tile.values()))
-			tile_type_2 = random.choice(a = list(probability_1_by_tile.keys()), p = list(probability_1_by_tile.values()))
+			tile_type_2 = random.choice(a = list(probability_2_by_tile.keys()), p = list(probability_2_by_tile.values()))
 			if tile_type_1 != tile_type_2:
 				break
 
@@ -378,19 +418,17 @@ class CatanGeneratorTiling:
 		# Compute the updated entropy values
 		new_entropy_by_tile = self._computeEntropyPerTileType()
 
-		# Reject the change if it raised the mean squared error (if needed)
+		# Reject the change if it raised the mean squared error of efficiency (if needed)
 		if reject_flag == True:
-			# Compute the mean squared error for entropy values (i.e. water should be low, all others should be high)
+			# Compute the mean squared error for efficiency values (e.g. water should be low, all others should be high)
 			old_mean_squared_error = 0
 			new_mean_squared_error = 0
 			denominator = len(self._needed_tile_types)
 			for tile_type in self._needed_tile_types:
-				if tile_type == "water":
-					old_mean_squared_error += old_entropy_by_tile[tile_type]**2 / denominator
-					new_mean_squared_error += new_entropy_by_tile[tile_type]**2 / denominator
-				else:
-					old_mean_squared_error += (self._maximum_entropy - old_entropy_by_tile[tile_type])**2 / denominator
-					new_mean_squared_error += (self._maximum_entropy - new_entropy_by_tile[tile_type])**2 / denominator
+				old_efficiency = old_entropy_by_tile[tile_type] / self._maximum_entropy
+				new_efficiency = new_entropy_by_tile[tile_type] / self._maximum_entropy
+				old_mean_squared_error += (target_efficiency_per_tile[tile_type] - old_efficiency)**2 / denominator
+				new_mean_squared_error += (target_efficiency_per_tile[tile_type] - new_efficiency)**2 / denominator
 
 			# Revert the change due to the mean squared error going up (if needed)
 			if new_mean_squared_error > old_mean_squared_error:
@@ -470,14 +508,12 @@ class CatanGeneratorGUI:
 game_mode = "Seafarers: 5-6 Player"
 
 from tqdm import tqdm
-p_reject = 0.98
 dpi = 300
 
 tiling = CatanGeneratorTiling(game_mode = game_mode)
 tiling.render(dpi = dpi).show()
 
-for index in tqdm(range(1000)):
-	reject_flag = random.rand() < p_reject
-	tiling.swapTiles(skew_power = 1, reject_flag = reject_flag)
+for index in tqdm(range(10000)):
+	tiling.swapTiles(skew_power = float("inf"), reject_flag = True)
 
 tiling.render(dpi = dpi).show()
