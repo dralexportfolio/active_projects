@@ -158,7 +158,7 @@ target_efficiency_per_tile = {
 	"wood": 0.9,
 	"desert": 0.9,
 	"gold": 0.9,
-	"water": 0.5
+	"water": 0.6
 }
 
 # Define the colors used for each tile
