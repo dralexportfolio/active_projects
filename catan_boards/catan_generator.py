@@ -348,76 +348,45 @@ class CatanGeneratorTiling:
 		tile_type_1 = self._tile_per_polygon[polygon_index_1]
 		tile_type_2 = self._tile_per_polygon[polygon_index_2]
 
-		# Update the neighbor counts due to changing the 1st polygon
+		# Lower the neighbor counts for type 1 before changing the 1st polygon
 		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_1]:
 			# Get the tile type for the neighbor
 			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+
 			# Unlink the neighbor type from type 1
 			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] -= 1
 			self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] -= 1
-			# Link the neighbor type to type 2
-			#self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] += 1
-			#self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] += 1
 
-		# Update the neighbor counts due to changing the 2nd polygon
+		# Lower the neighbor counts for type 2 before changing the 2nd polygon
 		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_2]:
 			# Get the tile type for the neighbor
 			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+
 			# Unlink the neighbor type from type 2
 			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] -= 1
 			self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] -= 1
-			# Link the neighbor type to type 1
-			#self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] += 1
-			#self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] += 1
 
-		# Swap the types for the polygons
+		# Swap the types for the selected polygons
 		self._tile_per_polygon[polygon_index_1] = tile_type_2
 		self._tile_per_polygon[polygon_index_2] = tile_type_1
 
-		# Update the neighbor counts due to changing the 1st polygon
+		# Raise the neighbor counts for type 2 after changing the 1st polygon
 		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_1]:
 			# Get the tile type for the neighbor
 			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
-			# Unlink the neighbor type from type 1
-			#self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] -= 1
-			#self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] -= 1
+
 			# Link the neighbor type to type 2
 			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] += 1
 			self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] += 1
 
-		# Update the neighbor counts due to changing the 2nd polygon
+		# Raise the neighbor counts for type 1 after changing the 2nd polygon
 		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_2]:
 			# Get the tile type for the neighbor
 			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
-			# Unlink the neighbor type from type 2
-			#self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] -= 1
-			#self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] -= 1
+
 			# Link the neighbor type to type 1
 			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] += 1
 			self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] += 1
-
-		'''
-		adjacent_flag = polygon_index_1 in self._neighbor_indices_per_polygon[polygon_index_2]
-
-		neighbor_counts_per_tile = {}
-		for tile_type_1 in self._needed_tile_types:
-			neighbor_counts_per_tile[tile_type_1] = {}
-			for tile_type_2 in self._needed_tile_types:
-				neighbor_counts_per_tile[tile_type_1][tile_type_2] = 0
-		for polygon_index_1 in range(self._n_polygons):
-			tile_type_1 = self._tile_per_polygon[polygon_index_1]
-			for polygon_index_2 in self._neighbor_indices_per_polygon[polygon_index_1]:
-				tile_type_2 = self._tile_per_polygon[polygon_index_2]
-				neighbor_counts_per_tile[tile_type_1][tile_type_2] += 1
-
-		match_flag = True
-		for tile_type_1 in self._needed_tile_types:
-			for tile_type_2 in self._needed_tile_types:
-				if self._neighbor_counts_per_tile[tile_type_1][tile_type_2] != neighbor_counts_per_tile[tile_type_1][tile_type_2]:
-					match_flag = False
-
-		print(adjacent_flag, match_flag)
-		'''
 
 	### Define a function for swapping two tiles in an attempt to improve the tiling ###
 	def swapTiles(self, skew_power:Any = 1, reject_flag:bool = False):
