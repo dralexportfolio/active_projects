@@ -562,7 +562,7 @@ dpi = 300
 tiling = CatanGeneratorTiling(game_mode = game_mode)
 tiling.render(dpi = dpi).show()
 
-for index in tqdm(range(3000)):
+for index in tqdm(range(1000)):
 	tiling.swapTiles(skew_power = float("inf"), reject_flag = True)
 
 tiling.render(dpi = dpi).show()

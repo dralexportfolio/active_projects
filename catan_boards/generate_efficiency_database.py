@@ -373,17 +373,18 @@ else:
 	c_min = 0
 	c_max = max_abs_delta
 
-# Create a scatter plot showing how efficiency values affect delta values
-# Create the figure
-fig = go.Figure()
-# Set the trace names
-trace_name_by_quantile = ["Great Swaps", "Good Swaps", "Bad Swaps", "Terrible Swaps"]
-# Add the needed traces
+# Set the title suffixes for each quantile
+suffixes_by_quantile = ["Great Swaps", "Good Swaps", "Bad Swaps", "Terrible Swaps"]
+
+# Create scatter plots showing how efficiency values affect delta values
 for quantile_index in range(4):
+	# Create the figure
+	fig = go.Figure()
+
+	# Add the needed traces
 	fig.add_trace(go.Scatter(x = efficiency_1_values_by_quantile[quantile_index],
 							 y = efficiency_2_values_by_quantile[quantile_index],
-							 name = trace_name_by_quantile[quantile_index],
-							 showlegend = True,
+							 showlegend = False,
 							 customdata = delta_values_by_quantile[quantile_index],
 							 hovertemplate = ("<b>Pre-Swap Efficiency 1:</b> %{x}<br>"
 											  "<b>Pre-Swap Efficiency 2:</b> %{y}<br>"
@@ -392,13 +393,15 @@ for quantile_index in range(4):
 							 mode = "markers",
 							 marker = {"color": delta_values_by_quantile[quantile_index],
 									   "colorscale": color_scale,
-									   "showscale": False,
+									   "showscale": True,
 									   "cmin": c_min,
 									   "cmax": c_max}))
-# Format the figure
-fig.update_layout(title = "Deltas In Mean Squared Error As Functions Of Efficiency Values",
-				  xaxis = {"range": [-0.05, 1.05]}, yaxis = {"range": [-0.05, 1.05]})
-fig.update_xaxes(title = "pre-swap efficiency 1")
-fig.update_yaxes(title = "pre-swap efficiency 2")
-# Show the figure
-fig.show()
+
+	# Format the figure
+	fig.update_layout(title = "Changes In Mean Squared Error As Functions Of Efficiency Values (" + suffixes_by_quantile[quantile_index] + ")",
+					  xaxis = {"range": [-0.05, 1.05]}, yaxis = {"range": [-0.05, 1.05]})
+	fig.update_xaxes(title = "pre-swap efficiency 1")
+	fig.update_yaxes(title = "pre-swap efficiency 2")
+	
+	# Show the figure
+	fig.show()
