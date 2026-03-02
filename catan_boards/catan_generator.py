@@ -201,6 +201,7 @@ catan_generator_tiling_decorator = private_attributes_dec("_adjacency_matrix",		
 														  "_maximum_entropy",
 														  "_n_polygons",
 														  "_needed_tile_types",
+														  "_neighbor_counts_per_tile",
 														  "_neighbor_indices_per_polygon",
 														  "_tiles_per_index",
 														  "_computeEntropyPerTileType",			# private functions
@@ -297,45 +298,126 @@ class CatanGeneratorTiling:
 					self._neighbor_indices_per_polygon[polygon_index_1].append(polygon_index_2)
 					self._neighbor_indices_per_polygon[polygon_index_2].append(polygon_index_1)
 
-	### Define a function for computing the Shannon entropy of neighbor distributions for each tile type ###
-	def _computeEntropyPerTileType(self) -> dict:
-		# Compute the Shannon entropy of the probability distributions over possible neighbors for each tile type
-		# Initialize all the storage dictionaries needed for this function
-		# Create the dictionaries
-		count_results = {}
-		probability_results = {}
-		entropy_by_tile = {}
-		# Loop over the needed tile types and add more information
-		for tile_type_1 in self._needed_tile_types:
-			# Add in the storage at this level
-			count_results[tile_type_1] = {}
-			probability_results[tile_type_1] = {}
-			entropy_by_tile[tile_type_1] = 0
-			# Loop over secondary tile types for the counts and probabilities
-			for tile_type_2 in self._needed_tile_types:
-				count_results[tile_type_1][tile_type_2] = 0
-				probability_results[tile_type_1][tile_type_2] = 0
-
 		# Count the number of neighbors of each tile type belonging to each type of tile
+		# Initialize the dictionary
+		self._neighbor_counts_per_tile = {}
+		for tile_type_1 in self._needed_tile_types:
+			self._neighbor_counts_per_tile[tile_type_1] = {}
+			for tile_type_2 in self._needed_tile_types:
+				self._neighbor_counts_per_tile[tile_type_1][tile_type_2] = 0
+		# Compute the neighbor counts
 		for polygon_index_1 in range(self._n_polygons):
 			tile_type_1 = self._tile_per_polygon[polygon_index_1]
 			for polygon_index_2 in self._neighbor_indices_per_polygon[polygon_index_1]:
 				tile_type_2 = self._tile_per_polygon[polygon_index_2]
-				count_results[tile_type_1][tile_type_2] += 1
+				self._neighbor_counts_per_tile[tile_type_1][tile_type_2] += 1
+
+	### Define functions related to computing the Shannon entropy of neighbor distributions for each tile type ###
+	def _computeEntropyPerTileType(self) -> dict:
+		# Compute the Shannon entropy of the probability distributions over possible neighbors for each tile type
+		# Initialize all the storage dictionaries needed for this function
+		# Create the main dictionaries
+		neighbor_probs_per_tile = {}
+		entropy_by_tile = {}
+		# Loop over the needed tile types and add more information
+		for tile_type_1 in self._needed_tile_types:
+			# Add in the storage at this level
+			neighbor_probs_per_tile[tile_type_1] = {}
+			entropy_by_tile[tile_type_1] = 0
+			# Loop over secondary tile types for the probabilities
+			for tile_type_2 in self._needed_tile_types:
+				neighbor_probs_per_tile[tile_type_1][tile_type_2] = 0
 
 		# Convert the neighbor counts to probabilities of neighbor types
 		for tile_type_1 in self._needed_tile_types:
-			n_neighbors = sum(list(count_results[tile_type_1].values()))
+			n_neighbors = sum(list(self._neighbor_counts_per_tile[tile_type_1].values()))
 			for tile_type_2 in self._needed_tile_types:
-				probability_results[tile_type_1][tile_type_2] = count_results[tile_type_1][tile_type_2] / n_neighbors
+				neighbor_probs_per_tile[tile_type_1][tile_type_2] = self._neighbor_counts_per_tile[tile_type_1][tile_type_2] / n_neighbors
 
 		# Compute the Shannon entropy of each tile type's distribution
 		for tile_type_1 in self._needed_tile_types:
 			for tile_type_2 in self._needed_tile_types:
-				entropy_by_tile[tile_type_1] += computeMarginalEntropy(probability_results[tile_type_1][tile_type_2])
+				entropy_by_tile[tile_type_1] += computeMarginalEntropy(neighbor_probs_per_tile[tile_type_1][tile_type_2])
 
 		# Return the results
 		return entropy_by_tile
+
+	def _updateStorageDueToSwap(self, polygon_index_1:int, polygon_index_2:int):
+		# Update the polygon tile type list and neighbor counts dictionary to reflect a swap occurring (note: input verification not done for efficiency)
+		# Get the current tile types associated with these polygons
+		tile_type_1 = self._tile_per_polygon[polygon_index_1]
+		tile_type_2 = self._tile_per_polygon[polygon_index_2]
+
+		# Update the neighbor counts due to changing the 1st polygon
+		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_1]:
+			# Get the tile type for the neighbor
+			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+			# Unlink the neighbor type from type 1
+			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] -= 1
+			self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] -= 1
+			# Link the neighbor type to type 2
+			#self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] += 1
+			#self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] += 1
+
+		# Update the neighbor counts due to changing the 2nd polygon
+		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_2]:
+			# Get the tile type for the neighbor
+			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+			# Unlink the neighbor type from type 2
+			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] -= 1
+			self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] -= 1
+			# Link the neighbor type to type 1
+			#self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] += 1
+			#self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] += 1
+
+		# Swap the types for the polygons
+		self._tile_per_polygon[polygon_index_1] = tile_type_2
+		self._tile_per_polygon[polygon_index_2] = tile_type_1
+
+		# Update the neighbor counts due to changing the 1st polygon
+		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_1]:
+			# Get the tile type for the neighbor
+			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+			# Unlink the neighbor type from type 1
+			#self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] -= 1
+			#self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] -= 1
+			# Link the neighbor type to type 2
+			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] += 1
+			self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] += 1
+
+		# Update the neighbor counts due to changing the 2nd polygon
+		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_2]:
+			# Get the tile type for the neighbor
+			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+			# Unlink the neighbor type from type 2
+			#self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] -= 1
+			#self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] -= 1
+			# Link the neighbor type to type 1
+			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] += 1
+			self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] += 1
+
+		'''
+		adjacent_flag = polygon_index_1 in self._neighbor_indices_per_polygon[polygon_index_2]
+
+		neighbor_counts_per_tile = {}
+		for tile_type_1 in self._needed_tile_types:
+			neighbor_counts_per_tile[tile_type_1] = {}
+			for tile_type_2 in self._needed_tile_types:
+				neighbor_counts_per_tile[tile_type_1][tile_type_2] = 0
+		for polygon_index_1 in range(self._n_polygons):
+			tile_type_1 = self._tile_per_polygon[polygon_index_1]
+			for polygon_index_2 in self._neighbor_indices_per_polygon[polygon_index_1]:
+				tile_type_2 = self._tile_per_polygon[polygon_index_2]
+				neighbor_counts_per_tile[tile_type_1][tile_type_2] += 1
+
+		match_flag = True
+		for tile_type_1 in self._needed_tile_types:
+			for tile_type_2 in self._needed_tile_types:
+				if self._neighbor_counts_per_tile[tile_type_1][tile_type_2] != neighbor_counts_per_tile[tile_type_1][tile_type_2]:
+					match_flag = False
+
+		print(adjacent_flag, match_flag)
+		'''
 
 	### Define a function for swapping two tiles in an attempt to improve the tiling ###
 	def swapTiles(self, skew_power:Any = 1, reject_flag:bool = False):
@@ -411,9 +493,8 @@ class CatanGeneratorTiling:
 		polygon_index_1 = random.choice(a = possible_indices_1)
 		polygon_index_2 = random.choice(a = possible_indices_2)
 
-		# Perform the needed tile swap for these polygons
-		self._tile_per_polygon[polygon_index_1] = tile_type_2
-		self._tile_per_polygon[polygon_index_2] = tile_type_1
+		# Perform the needed tile swap for these polygons by updating internal storage accordingly
+		self._updateStorageDueToSwap(polygon_index_1 = polygon_index_1, polygon_index_2 = polygon_index_2)
 
 		# Compute the updated entropy values
 		new_entropy_by_tile = self._computeEntropyPerTileType()
@@ -432,8 +513,7 @@ class CatanGeneratorTiling:
 
 			# Revert the change due to the mean squared error going up (if needed)
 			if new_mean_squared_error > old_mean_squared_error:
-				self._tile_per_polygon[polygon_index_1] = tile_type_1
-				self._tile_per_polygon[polygon_index_2] = tile_type_2
+				self._updateStorageDueToSwap(polygon_index_1 = polygon_index_1, polygon_index_2 = polygon_index_2)
 
 	### Define a function for rendering the tiling ###
 	def render(self, dpi:int) -> Image.Image:

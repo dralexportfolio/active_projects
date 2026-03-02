@@ -188,40 +188,40 @@ def computeEntropyInfo(needed_tile_types:list, tile_per_polygon:list) -> dict:
 	maximum_entropy = log2(len(needed_tile_types))
 
 	# Initialize the needed storage dictionaries
-	# Initialize the main dictionaries
-	count_results = {}
-	probability_results = {}
+	# Create the main dictionaries
+	neighbor_counts_per_tile = {}
+	neighbor_probs_per_tile = {}
 	entropy_by_tile = {}
 	efficiency_by_tile = {}
 	# Loop over the needed tile types and add more information
 	for tile_type_1 in needed_tile_types:
 		# Add in the storage at this level
-		count_results[tile_type_1] = {}
-		probability_results[tile_type_1] = {}
+		neighbor_counts_per_tile[tile_type_1] = {}
+		neighbor_probs_per_tile[tile_type_1] = {}
 		entropy_by_tile[tile_type_1] = 0
 		efficiency_by_tile[tile_type_1] = 0
 		# Loop over secondary tile types for the counts and probabilities
 		for tile_type_2 in needed_tile_types:
-			count_results[tile_type_1][tile_type_2] = 0
-			probability_results[tile_type_1][tile_type_2] = 0
+			neighbor_counts_per_tile[tile_type_1][tile_type_2] = 0
+			neighbor_probs_per_tile[tile_type_1][tile_type_2] = 0
 
 	# Count the number of neighbors of each tile type belonging to each type of tile
 	for polygon_index_1 in range(n_polygons):
 		tile_type_1 = tile_per_polygon[polygon_index_1]
 		for polygon_index_2 in neighbor_indices_per_polygon[polygon_index_1]:
 			tile_type_2 = tile_per_polygon[polygon_index_2]
-			count_results[tile_type_1][tile_type_2] += 1
+			neighbor_counts_per_tile[tile_type_1][tile_type_2] += 1
 
 	# Convert the neighbor counts to probabilities of neighbor types
 	for tile_type_1 in needed_tile_types:
-		n_neighbors = sum(list(count_results[tile_type_1].values()))
+		n_neighbors = sum(list(neighbor_counts_per_tile[tile_type_1].values()))
 		for tile_type_2 in needed_tile_types:
-			probability_results[tile_type_1][tile_type_2] = count_results[tile_type_1][tile_type_2] / n_neighbors
+			neighbor_probs_per_tile[tile_type_1][tile_type_2] = neighbor_counts_per_tile[tile_type_1][tile_type_2] / n_neighbors
 
 	# Compute the Shannon entropy of each tile type's distribution
 	for tile_type_1 in needed_tile_types:
 		for tile_type_2 in needed_tile_types:
-			prob_value = probability_results[tile_type_1][tile_type_2]
+			prob_value = neighbor_probs_per_tile[tile_type_1][tile_type_2]
 			if prob_value not in [0, 1]:
 				entropy_by_tile[tile_type_1] += prob_value * log2(1 / prob_value)
 
@@ -241,8 +241,8 @@ def computeEntropyInfo(needed_tile_types:list, tile_per_polygon:list) -> dict:
 
 	# Construct the dictionary of results
 	all_entropy_results = {
-		"count_results": count_results,
-		"probability_results": probability_results,
+		"neighbor_counts_per_tile": neighbor_counts_per_tile,
+		"neighbor_probs_per_tile": neighbor_probs_per_tile,
 		"entropy_by_tile":  entropy_by_tile,
 		"efficiency_by_tile": efficiency_by_tile,
 		"mean_squared_error": mean_squared_error
