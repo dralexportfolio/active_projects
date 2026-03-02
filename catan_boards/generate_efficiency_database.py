@@ -398,7 +398,7 @@ for quantile_index in range(4):
 									   "cmax": c_max}))
 
 	# Format the figure
-	fig.update_layout(title = "Changes In Mean Squared Error As Functions Of Efficiency Values (" + suffixes_by_quantile[quantile_index] + ")",
+	fig.update_layout(title = "Change In Mean Squared Error As Function Of Efficiency Values (" + suffixes_by_quantile[quantile_index] + ")",
 					  xaxis = {"range": [-0.05, 1.05]}, yaxis = {"range": [-0.05, 1.05]})
 	fig.update_xaxes(title = "pre-swap efficiency 1")
 	fig.update_yaxes(title = "pre-swap efficiency 2")
