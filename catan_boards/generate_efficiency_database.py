@@ -37,7 +37,7 @@ from tqdm import tqdm
 reject_flag = False
 
 # Number of simulations to run and number of swaps to run per simulation
-n_simulations = 10
+n_simulations = 1
 n_steps_per_simulation = 1000
 
 # Number of hexagons per side of board
@@ -374,7 +374,10 @@ else:
 	c_max = max_abs_delta
 
 # Set the title suffixes for each quantile
-suffixes_by_quantile = ["Great Swaps", "Good Swaps", "Bad Swaps", "Terrible Swaps"]
+suffixes_by_quantile = ["75th To 100th Percentile",
+						"50th To 75th Percentile",
+						"25th To 50th Percentile",
+						"0th To 25th Percentile"]
 
 # Create scatter plots showing how efficiency values affect delta values
 for quantile_index in range(4):
