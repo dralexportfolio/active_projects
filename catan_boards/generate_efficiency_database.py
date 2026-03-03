@@ -33,11 +33,14 @@ from tqdm import tqdm
 ######################################################
 ### Define parameters related to the entropy study ###
 ######################################################
+# Define the random seed to use
+seed = 0
+
 # Flag for rejecting bad changes
 reject_flag = False
 
 # Number of simulations to run and number of swaps to run per simulation
-n_simulations = 1
+n_simulations = 10
 n_steps_per_simulation = 1000
 
 # Number of hexagons per side of board
@@ -170,6 +173,10 @@ addTable(db_path = db_path, table_name = table_name, column_names = column_names
 ######################################################################
 ### Run the needed simulations and save the results to the db file ###
 ######################################################################
+# Set the random seed (if needed)
+if seed is not None:
+	random.seed(seed = seed)
+
 # Define function for computing the entropy information of a given tiling
 def computeEntropyInfo(needed_tile_types:list, tile_per_polygon:list) -> dict:
 	# Verify the inputs

@@ -89,20 +89,20 @@ raw_data_array = array(raw_data_lists, dtype = float)
 ### Perform the needed dimensional analysis on the efficiency data ###
 ######################################################################
 # Set the needed softmax distance settings
-softmax_distance = 0.8
+all_softmax_distances = [0.4, 0.8, 1.6]
 min_softmax_distance = 0.1
 max_softmax_distance = 2.5
 n_distances = 20
 
 # Set the needed percent variance settings
-percent_variance = 75
+all_percent_variances = [60, 75, 90]
 min_percent_variance = 50
 max_percent_variance = 90
 
 # General plot settings
 round_flag = False
-show_flag = True
-save_flag = False
+show_flag = False
+save_flag = True
 
 # Generate the dimensional analysis db file
 db_path_dimensional = generateDimensionDatabase(raw_data_array = raw_data_array,
@@ -110,22 +110,25 @@ db_path_dimensional = generateDimensionDatabase(raw_data_array = raw_data_array,
 												max_softmax_distance = max_softmax_distance,
 												n_distances = n_distances)
 
-# Create a scatter plot of the dimension estimate of each point given a fixed softmax distance and percent variance
-plotDimensionEstimateOfSet(db_path = db_path_dimensional,
-						   softmax_distance = softmax_distance,
-						   percent_variance = percent_variance,
-						   plot_type = "scatter3D",
-						   used_engine = "matplotlib",
-						   round_flag = round_flag,
-						   show_flag = show_flag,
-						   save_flag = save_flag)
+# Generate the needed figures
+for softmax_distance in all_softmax_distances:
+	for percent_variance in all_percent_variances:
+		# Create a scatter plot of the dimension estimate of each point given a fixed softmax distance and percent variance
+		plotDimensionEstimateOfSet(db_path = db_path_dimensional,
+								   softmax_distance = softmax_distance,
+								   percent_variance = percent_variance,
+								   plot_type = "scatter3D",
+								   used_engine = "matplotlib",
+								   round_flag = round_flag,
+								   show_flag = show_flag,
+								   save_flag = save_flag)
 
-# Create a distribution of the dimension estimates by percentile given a fixed softmax distance and percent variance
-plotDimensionEstimateOfSet(db_path = db_path_dimensional,
-						   softmax_distance = softmax_distance,
-						   percent_variance = percent_variance,
-						   plot_type = "distribution",
-						   used_engine = "matplotlib",
-						   round_flag = round_flag,
-						   show_flag = show_flag,
-						   save_flag = save_flag)
+		# Create a distribution of the dimension estimates by percentile given a fixed softmax distance and percent variance
+		plotDimensionEstimateOfSet(db_path = db_path_dimensional,
+								   softmax_distance = softmax_distance,
+								   percent_variance = percent_variance,
+								   plot_type = "distribution",
+								   used_engine = "matplotlib",
+								   round_flag = round_flag,
+								   show_flag = show_flag,
+								   save_flag = save_flag)

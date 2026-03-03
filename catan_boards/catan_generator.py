@@ -33,7 +33,7 @@ from PrivateAttributesDecorator import private_attributes_dec
 ### Define important shared settings for the game ###
 #####################################################
 # Define the random seed to use
-seed = None
+seed = 0
 
 # Define the default bevel and sun information
 bevel_attitude = 25
