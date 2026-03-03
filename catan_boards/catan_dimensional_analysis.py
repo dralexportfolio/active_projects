@@ -110,6 +110,16 @@ plotDimensionEstimateOfSet(db_path = db_path_dimensional,
 						   softmax_distance = softmax_distance,
 						   percent_variance = percent_variance,
 						   plot_type = "scatter3D",
+						   used_engine = "plotly",
+						   round_flag = False,
+						   show_flag = True,
+						   save_flag = False)
+
+# Create a distribution of the dimension estimates by percentile given a fixed softmax distance and percent variance
+plotDimensionEstimateOfSet(db_path = db_path_dimensional,
+						   softmax_distance = softmax_distance,
+						   percent_variance = percent_variance,
+						   plot_type = "distribution",
 						   used_engine = "matplotlib",
 						   round_flag = False,
 						   show_flag = True,
