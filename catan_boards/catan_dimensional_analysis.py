@@ -99,6 +99,11 @@ percent_variance = 75
 min_percent_variance = 50
 max_percent_variance = 90
 
+# General plot settings
+round_flag = False
+show_flag = True
+save_flag = False
+
 # Generate the dimensional analysis db file
 db_path_dimensional = generateDimensionDatabase(raw_data_array = raw_data_array,
 												min_softmax_distance = min_softmax_distance,
@@ -110,10 +115,10 @@ plotDimensionEstimateOfSet(db_path = db_path_dimensional,
 						   softmax_distance = softmax_distance,
 						   percent_variance = percent_variance,
 						   plot_type = "scatter3D",
-						   used_engine = "plotly",
-						   round_flag = False,
-						   show_flag = True,
-						   save_flag = False)
+						   used_engine = "matplotlib",
+						   round_flag = round_flag,
+						   show_flag = show_flag,
+						   save_flag = save_flag)
 
 # Create a distribution of the dimension estimates by percentile given a fixed softmax distance and percent variance
 plotDimensionEstimateOfSet(db_path = db_path_dimensional,
@@ -121,6 +126,6 @@ plotDimensionEstimateOfSet(db_path = db_path_dimensional,
 						   percent_variance = percent_variance,
 						   plot_type = "distribution",
 						   used_engine = "matplotlib",
-						   round_flag = False,
-						   show_flag = True,
-						   save_flag = False)
+						   round_flag = round_flag,
+						   show_flag = show_flag,
+						   save_flag = save_flag)
