@@ -39,8 +39,9 @@ for tile_type in all_tile_types:
 	column_names.append(tile_type + "_pre_efficiency")
 	column_types.append("FLOAT")
 
-# Select a db file and get the associated path
+# Get a path from which the data should be loaded and make sure cancel wasn't clicked
 db_path_efficiency = askOpenFilename(allowed_extensions = ["db"])
+assert db_path_efficiency is not None, "Unable to read db file because cancel button was clicked"
 
 # Verify that the db file has the needed information
 # Make sure that only the needed table is present
