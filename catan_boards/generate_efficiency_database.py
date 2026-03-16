@@ -19,7 +19,7 @@ path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 from Board import Board
 from color_helper import ALL_PLOTLY_COLOR_SCALES_BY_TYPE, customSpectrum, RGB
 from Polygon import HEXAGON_REGULAR_TALL
-from sqlite3_helper import addTable, appendRow, getRowCount, readColumn, readEntry, replaceRow
+from sqlite3_helper import addTable, appendRow, ConnectionManager, getRowCount, readColumn, readEntry, replaceRow
 from tkinter_helper import askSaveFilename
 from type_helper import tolerantlyCompare
 
@@ -156,6 +156,9 @@ for polygon_index_1 in range(n_polygons - 1):
 db_path = askSaveFilename(allowed_extensions = ["db"])
 assert db_path is not None, "Unable to create db file because cancel button was clicked"
 
+# Create a connection manager to associate with the db file
+connection_manager = ConnectionManager(db_path = db_path)
+
 # Set the table name for the simulation results
 table_name = "sim_results"
 
@@ -167,7 +170,7 @@ for tile_type in all_tile_types:
 	column_types.append("FLOAT")
 
 # Create the needed table in the db file
-addTable(db_path = db_path, table_name = table_name, column_names = column_names, column_types = column_types)
+addTable(connection_manager = connection_manager, table_name = table_name, column_names = column_names, column_types = column_types)
 
 
 ######################################################################
@@ -304,7 +307,7 @@ for sim_index in tqdm(range(n_simulations)):
 
 		# Write the needed information to the db file
 		# Get the row index for the new row
-		row_index = getRowCount(db_path = db_path, table_name = table_name)
+		row_index = getRowCount(connection_manager = connection_manager, table_name = table_name)
 		# Create a list containing the new row information
 		new_row = [sim_index, step_index, tile_type_1, tile_type_2, pre_all_entropy_results["mean_squared_error"], post_all_entropy_results["mean_squared_error"],
 				   post_all_entropy_results["mean_squared_error"] - pre_all_entropy_results["mean_squared_error"]]
@@ -314,8 +317,8 @@ for sim_index in tqdm(range(n_simulations)):
 			else:
 				new_row.append(0)
 		# Add the new row to the db file
-		appendRow(db_path = db_path, table_name = table_name)
-		replaceRow(db_path = db_path, table_name = table_name, row_index = row_index, new_row = new_row)
+		appendRow(connection_manager = connection_manager, table_name = table_name)
+		replaceRow(connection_manager = connection_manager, table_name = table_name, row_index = row_index, new_row = new_row)
 
 
 #########################################################
@@ -327,19 +330,19 @@ efficiency_1_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
 efficiency_2_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
 
 # Compute the maximum magnitude delta value in the db file
-delta_column = readColumn(db_path = db_path, table_name = table_name, column_name = "delta_mean_squared_error")
+delta_column = readColumn(connection_manager = connection_manager, table_name = table_name, column_name = "delta_mean_squared_error")
 max_abs_delta = max(abs(max(delta_column)), abs(min(delta_column)))
 
 # Get the quantile information from the delta column
 quantile_values = quantile(a = delta_column, q = [0, 0.25, 0.5, 0.75, 1])
 
 # Get the total number of rows from the db file
-n_rows = getRowCount(db_path = db_path, table_name = table_name)
+n_rows = getRowCount(connection_manager = connection_manager, table_name = table_name)
 
 # Read the needed information from the table
 for row_index in range(n_rows):
 	# Get the change in mean squared error associated with this swap
-	delta_mean_squared_error = readEntry(db_path = db_path, table_name = table_name, column_name = "delta_mean_squared_error", row_index = row_index)
+	delta_mean_squared_error = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "delta_mean_squared_error", row_index = row_index)
 
 	# Determine to which quantile the relevant data should be added
 	if quantile_values[0] <= delta_mean_squared_error and delta_mean_squared_error < quantile_values[1]:
@@ -354,17 +357,20 @@ for row_index in range(n_rows):
 	# Proceed with the analysis (if needed)
 	if reject_flag == False or delta_mean_squared_error < 0:
 		# Get the two tile types involved with this swap
-		tile_type_1 = readEntry(db_path = db_path, table_name = table_name, column_name = "tile_type_1", row_index = row_index)
-		tile_type_2 = readEntry(db_path = db_path, table_name = table_name, column_name = "tile_type_2", row_index = row_index)
+		tile_type_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_1", row_index = row_index)
+		tile_type_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_2", row_index = row_index)
 
 		# Get the associated efficient values for these tile types
-		efficiency_1 = readEntry(db_path = db_path, table_name = table_name, column_name = tile_type_1 + "_pre_efficiency", row_index = row_index)
-		efficiency_2 = readEntry(db_path = db_path, table_name = table_name, column_name = tile_type_2 + "_pre_efficiency", row_index = row_index)
+		efficiency_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_1 + "_pre_efficiency", row_index = row_index)
+		efficiency_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_2 + "_pre_efficiency", row_index = row_index)
 
 		# Append to the needed lists
 		delta_values_by_quantile[quantile_index].append(delta_mean_squared_error)
 		efficiency_1_values_by_quantile[quantile_index].append(efficiency_1)
 		efficiency_2_values_by_quantile[quantile_index].append(efficiency_2)
+
+# Close the connection manager
+connection_manager.close()
 
 # Set the color scale and color bound values as needed
 if reject_flag == False:

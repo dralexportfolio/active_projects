@@ -68,94 +68,98 @@ used_engine_bar = "plotly"
 max_n_points_bar = 60
 
 
-########################################################
-### Generate the raw and processed data for the demo ###
-########################################################
-# Set the random seed (if needed)
-if seed is not None:
-    random.seed(seed = seed)
+#########################################################################
+### Create the code inside __main__ so that multiprocessing will work ###
+#########################################################################
+if __name__ == "__main__":
+	#####################################################################################
+	### Generate the raw data and processed data from which figures will be generated ###
+	#####################################################################################
+	# Set the random seed (if needed)
+	if seed is not None:
+		random.seed(seed = seed)
 
-# Generate the raw random data
-raw_data_array = (2 * random.rand(n_points, n_parameters) - 1) * noise_level
-for row_index in range(n_points):
-    # Generate the raw x-value and y-value
-    raw_x_value = random.randn()
-    raw_y_value = random.randn()
+	# Generate the raw random data
+	raw_data_array = (2 * random.rand(n_points, n_parameters) - 1) * noise_level
+	for row_index in range(n_points):
+		# Generate the raw x-value and y-value
+		raw_x_value = random.randn()
+		raw_y_value = random.randn()
 
-    # Normalize to get the correct final values
-    x_value = circle_radius * raw_x_value / sqrt(raw_x_value**2 + raw_y_value**2)
-    y_value = circle_radius * raw_y_value / sqrt(raw_x_value**2 + raw_y_value**2)
+		# Normalize to get the correct final values
+		x_value = circle_radius * raw_x_value / sqrt(raw_x_value**2 + raw_y_value**2)
+		y_value = circle_radius * raw_y_value / sqrt(raw_x_value**2 + raw_y_value**2)
 
-    # Store the computed values
-    raw_data_array[row_index, 0] += x_value
-    raw_data_array[row_index, 1] += y_value
+		# Store the computed values
+		raw_data_array[row_index, 0] += x_value
+		raw_data_array[row_index, 1] += y_value
 
-# Generate the dimension database and get the corresponding db file path
-db_path = generateDimensionDatabase(raw_data_array = raw_data_array,
-									min_softmax_distance = min_softmax_distance,
-									max_softmax_distance = max_softmax_distance,
-									n_distances = n_distances)
+	# Generate the dimension database and get the corresponding db file path
+	db_path = generateDimensionDatabase(raw_data_array = raw_data_array,
+										min_softmax_distance = min_softmax_distance,
+										max_softmax_distance = max_softmax_distance,
+										n_distances = n_distances)
 
 
-#########################################################
-### Create plots of the processed data in the db file ###
-#########################################################
-# Create a plot of the dimension estimate of the given point ranging over only percent variance
-plotDimensionEstimateOfPoint(db_path = db_path,
-							 row_index = row_index_single,
-							 min_softmax_distance = softmax_distance,
-							 max_softmax_distance = softmax_distance,
-							 min_percent_variance = min_percent_variance,
-							 max_percent_variance = max_percent_variance,
-							 n_samples = n_samples_single,
-							 used_engine = used_engine_single_2d,
-							 round_flag = round_flag,
-							 show_flag = show_flag,
-							 save_flag = save_flag)
+	##############################################################################
+	### Generate a series of figures showing the pointwise dimension estimates ###
+	##############################################################################
+	# Create a plot of the dimension estimate of the given point ranging over only percent variance
+	plotDimensionEstimateOfPoint(db_path = db_path,
+								 row_index = row_index_single,
+								 min_softmax_distance = softmax_distance,
+								 max_softmax_distance = softmax_distance,
+								 min_percent_variance = min_percent_variance,
+								 max_percent_variance = max_percent_variance,
+								 n_samples = n_samples_single,
+								 used_engine = used_engine_single_2d,
+								 round_flag = round_flag,
+								 show_flag = show_flag,
+								 save_flag = save_flag)
 
-# Create a plot of the dimension estimate of the given point ranging over only softmax distance
-plotDimensionEstimateOfPoint(db_path = db_path,
-							 row_index = row_index_single,
-							 min_softmax_distance = min_softmax_distance,
-							 max_softmax_distance = max_softmax_distance,
-							 min_percent_variance = percent_variance,
-							 max_percent_variance = percent_variance,
-							 n_samples = n_samples_single,
-							 used_engine = used_engine_single_2d,
-							 round_flag = round_flag,
-							 show_flag = show_flag,
-							 save_flag = save_flag)
+	# Create a plot of the dimension estimate of the given point ranging over only softmax distance
+	plotDimensionEstimateOfPoint(db_path = db_path,
+								 row_index = row_index_single,
+								 min_softmax_distance = min_softmax_distance,
+								 max_softmax_distance = max_softmax_distance,
+								 min_percent_variance = percent_variance,
+								 max_percent_variance = percent_variance,
+								 n_samples = n_samples_single,
+								 used_engine = used_engine_single_2d,
+								 round_flag = round_flag,
+								 show_flag = show_flag,
+								 save_flag = save_flag)
 
-# Create a plot of the dimension estimate of the given point ranging over both softmax distance and percent variance
-plotDimensionEstimateOfPoint(db_path = db_path,
-							 row_index = row_index_single,
-							 min_softmax_distance = min_softmax_distance,
-							 max_softmax_distance = max_softmax_distance,
-							 min_percent_variance = min_percent_variance,
-							 max_percent_variance = max_percent_variance,
-							 n_samples = n_samples_single,
-							 used_engine = used_engine_single_3d,
-							 round_flag = round_flag,
-							 show_flag = show_flag,
-							 save_flag = save_flag)
+	# Create a plot of the dimension estimate of the given point ranging over both softmax distance and percent variance
+	plotDimensionEstimateOfPoint(db_path = db_path,
+								 row_index = row_index_single,
+								 min_softmax_distance = min_softmax_distance,
+								 max_softmax_distance = max_softmax_distance,
+								 min_percent_variance = min_percent_variance,
+								 max_percent_variance = max_percent_variance,
+								 n_samples = n_samples_single,
+								 used_engine = used_engine_single_3d,
+								 round_flag = round_flag,
+								 show_flag = show_flag,
+								 save_flag = save_flag)
 
-# Create a scatter plot of the dimension estimate of each point given a fixed softmax distance and percent variance
-plotDimensionEstimateOfSet(db_path = db_path,
-						   softmax_distance = softmax_distance,
-						   percent_variance = percent_variance,
-						   plot_type = "scatter3D" if use_3d_flag_scatter == True else "scatter2D",
-						   used_engine = used_engine_scatter_3d if use_3d_flag_scatter == True else used_engine_scatter_2d,
-						   round_flag = round_flag,
-						   show_flag = show_flag,
-						   save_flag = save_flag)
-
-# Create a bar chart of the dimension estimate of each point given a fixed softmax distance and percent variance (if needed)
-if n_points <= max_n_points_bar:
+	# Create a scatter plot of the dimension estimate of each point given a fixed softmax distance and percent variance
 	plotDimensionEstimateOfSet(db_path = db_path,
 							   softmax_distance = softmax_distance,
 							   percent_variance = percent_variance,
-							   plot_type = "bar",
-							   used_engine = used_engine_bar,
+							   plot_type = "scatter3D" if use_3d_flag_scatter == True else "scatter2D",
+							   used_engine = used_engine_scatter_3d if use_3d_flag_scatter == True else used_engine_scatter_2d,
 							   round_flag = round_flag,
 							   show_flag = show_flag,
 							   save_flag = save_flag)
+
+	# Create a bar chart of the dimension estimate of each point given a fixed softmax distance and percent variance (if needed)
+	if n_points <= max_n_points_bar:
+		plotDimensionEstimateOfSet(db_path = db_path,
+								   softmax_distance = softmax_distance,
+								   percent_variance = percent_variance,
+								   plot_type = "bar",
+								   used_engine = used_engine_bar,
+								   round_flag = round_flag,
+								   show_flag = show_flag,
+								   save_flag = save_flag)
