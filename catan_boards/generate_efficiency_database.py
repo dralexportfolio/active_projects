@@ -19,7 +19,7 @@ path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 from Board import Board
 from color_helper import ALL_PLOTLY_COLOR_SCALES_BY_TYPE, customSpectrum, RGB
 from Polygon import HEXAGON_REGULAR_TALL
-from sqlite3_helper import addTable, appendRow, ConnectionManager, getRowCount, readColumn, readEntry, replaceRow
+from sqlite3_helper import addTable, appendRow, ConnectionManager, getRowCount, readColumn, readEntry
 from tkinter_helper import askSaveFilename
 from type_helper import tolerantlyCompare
 
@@ -317,8 +317,7 @@ for sim_index in tqdm(range(n_simulations)):
 			else:
 				new_row.append(0)
 		# Add the new row to the db file
-		appendRow(connection_manager = connection_manager, table_name = table_name)
-		replaceRow(connection_manager = connection_manager, table_name = table_name, row_index = row_index, new_row = new_row)
+		appendRow(connection_manager = connection_manager, table_name = table_name, new_row = new_row)
 
 
 #########################################################
