@@ -40,7 +40,7 @@ seed = 0
 reject_flag = False
 
 # Number of simulations to run and number of swaps to run per simulation
-n_simulations = 10
+n_simulations = 20
 n_steps_per_simulation = 1000
 
 # Number of hexagons per side of board

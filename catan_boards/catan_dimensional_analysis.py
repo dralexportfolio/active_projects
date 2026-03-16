@@ -22,6 +22,7 @@ from tkinter_helper import askOpenFilename
 
 # External modules
 from numpy import array
+from time import time
 from tqdm import tqdm
 
 
@@ -115,11 +116,17 @@ if __name__ == "__main__":
 	show_flag = False
 	save_flag = True
 
-	# Generate the dimensional analysis db file
+	# Generate the dimensional analysis db file and display total time taken to do so
+	# Set the start time
+	start_time = time()
+	# Generate the database and get the path
 	db_path_dimensional = generateDimensionDatabase(raw_data_array = raw_data_array,
 													min_softmax_distance = min_softmax_distance,
 													max_softmax_distance = max_softmax_distance,
 													n_distances = n_distances)
+	# Set the end time and display the difference
+	end_time = time()
+	print("Time To Generate Dimension Database: " + str(round(end_time - start_time, 2)) + " seconds")
 
 	# Generate the needed figures
 	for softmax_distance in all_softmax_distances:

@@ -50,7 +50,7 @@ save_flag = False
 # Single point plot settings
 used_engine_single_2d = "matplotlib"
 used_engine_single_3d = "matplotlib"
-row_index_single = 0
+point_index_single = 0
 n_samples_single = 200
 
 # Scatter plot settings
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 	##############################################################################
 	# Create a plot of the dimension estimate of the given point ranging over only percent variance
 	plotDimensionEstimateOfPoint(db_path = db_path,
-								 row_index = row_index_single,
+								 point_index = point_index_single,
 								 min_softmax_distance = softmax_distance,
 								 max_softmax_distance = softmax_distance,
 								 min_percent_variance = min_percent_variance,
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
 	# Create a plot of the dimension estimate of the given point ranging over only softmax distance
 	plotDimensionEstimateOfPoint(db_path = db_path,
-								 row_index = row_index_single,
+								 point_index = point_index_single,
 								 min_softmax_distance = min_softmax_distance,
 								 max_softmax_distance = max_softmax_distance,
 								 min_percent_variance = percent_variance,
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
 	# Create a plot of the dimension estimate of the given point ranging over both softmax distance and percent variance
 	plotDimensionEstimateOfPoint(db_path = db_path,
-								 row_index = row_index_single,
+								 point_index = point_index_single,
 								 min_softmax_distance = min_softmax_distance,
 								 max_softmax_distance = max_softmax_distance,
 								 min_percent_variance = min_percent_variance,

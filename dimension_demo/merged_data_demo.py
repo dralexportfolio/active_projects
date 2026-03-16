@@ -58,7 +58,7 @@ save_flag = False
 # Single point plot settings
 used_engine_single_2d = "matplotlib"
 used_engine_single_3d = "matplotlib"
-row_index_single = 0
+point_index_single = 0
 n_samples_single = 200
 
 # Scatter plot settings
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
 	# Generate the raw random data
 	raw_data_array = (2 * random.rand(n_points, n_parameters) - 1) * noise_level
-	for row_index in range(n_points):
+	for point_index in range(n_points):
 		if random.rand() < 0.5:
 			# Handle the circle case
 			# Generate the raw x-value, y-value and z-value
@@ -96,8 +96,8 @@ if __name__ == "__main__":
 			y_value = sphere_radius * raw_y_value / sqrt(raw_x_value**2 + raw_y_value**2)
 
 			# Store the computed values
-			raw_data_array[row_index, 0] += x_value
-			raw_data_array[row_index, 1] += y_value
+			raw_data_array[point_index, 0] += x_value
+			raw_data_array[point_index, 1] += y_value
 		else:
 			# Handle the sphere case
 			# Generate the raw x-value, y-value and z-value
@@ -111,9 +111,9 @@ if __name__ == "__main__":
 			z_value = sphere_radius * raw_z_value / sqrt(raw_x_value**2 + raw_y_value**2 + raw_z_value**2)
 
 			# Store the computed values
-			raw_data_array[row_index, 0] += x_value
-			raw_data_array[row_index, 1] += y_value
-			raw_data_array[row_index, 2] += z_value
+			raw_data_array[point_index, 0] += x_value
+			raw_data_array[point_index, 1] += y_value
+			raw_data_array[point_index, 2] += z_value
 
 	# Generate the dimension database and get the corresponding db file path
 	db_path = generateDimensionDatabase(raw_data_array = raw_data_array,
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 	##############################################################################
 	# Create a plot of the dimension estimate of the given point ranging over only percent variance
 	plotDimensionEstimateOfPoint(db_path = db_path,
-								 row_index = row_index_single,
+								 point_index = point_index_single,
 								 min_softmax_distance = softmax_distance,
 								 max_softmax_distance = softmax_distance,
 								 min_percent_variance = min_percent_variance,
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 
 	# Create a plot of the dimension estimate of the given point ranging over only softmax distance
 	plotDimensionEstimateOfPoint(db_path = db_path,
-								 row_index = row_index_single,
+								 point_index = point_index_single,
 								 min_softmax_distance = min_softmax_distance,
 								 max_softmax_distance = max_softmax_distance,
 								 min_percent_variance = percent_variance,
@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
 	# Create a plot of the dimension estimate of the given point ranging over both softmax distance and percent variance
 	plotDimensionEstimateOfPoint(db_path = db_path,
-								 row_index = row_index_single,
+								 point_index = point_index_single,
 								 min_softmax_distance = min_softmax_distance,
 								 max_softmax_distance = max_softmax_distance,
 								 min_percent_variance = min_percent_variance,
