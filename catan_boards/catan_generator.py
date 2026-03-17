@@ -19,6 +19,7 @@ path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 from Board import Board
 from color_helper import RGB
 from Polygon import HEXAGON_REGULAR_TALL
+from privacy_helper import privacyDecorator
 from tkinter_helper import createCanvas, createRectangle, createWindow
 from type_helper import isNumeric, tolerantlyCompare
 
@@ -26,7 +27,6 @@ from type_helper import isNumeric, tolerantlyCompare
 from math import log2, sqrt
 from numpy import random
 from PIL import Image
-from PrivateAttributesDecorator import private_attributes_dec
 
 
 #####################################################
@@ -196,16 +196,16 @@ def computeMarginalEntropy(prob_value:Any) -> float:
 ### Define the board generator tiling class ###
 ###############################################
 # Create the decorator needed for making the attributes private
-catan_generator_tiling_decorator = private_attributes_dec("_adjacency_matrix",					# class variables
-														  "_board",
-														  "_maximum_entropy",
-														  "_n_polygons",
-														  "_needed_tile_types",
-														  "_neighbor_counts_per_tile",
-														  "_neighbor_indices_per_polygon",
-														  "_tiles_per_index",
-														  "_computeEntropyPerTileType",			# private functions
-														  "_initializeTiling")
+catan_generator_tiling_decorator = privacyDecorator(["_adjacency_matrix",					# class variables
+													 "_board",
+													 "_maximum_entropy",
+													 "_n_polygons",
+													 "_needed_tile_types",
+													 "_neighbor_counts_per_tile",
+													 "_neighbor_indices_per_polygon",
+													 "_tiles_per_index",
+													 "_computeEntropyPerTileType",			# private functions
+													 "_initializeTiling"])
 
 # Define the class with private attributes
 @catan_generator_tiling_decorator
@@ -500,12 +500,12 @@ class CatanGeneratorTiling:
 ### Define the board generator GUI class ###
 ############################################
 # Create the decorator needed for making the attributes private
-catan_generator_gui_decorator = private_attributes_dec("_used_canvas",					# class variables
-												       "_used_window",
-												       "_BACKGROUND_COLOR_DARK",		# class constants
-												       "_BACKGROUND_COLOR_LIGHT",
-												       "_FOREGROUND_COLOR_DARK",
-												       "_FOREGROUND_COLOR_LIGHT")
+catan_generator_gui_decorator = privacyDecorator(["_used_canvas",					# class variables
+												  "_used_window",
+												  "_BACKGROUND_COLOR_DARK",			# class constants
+												  "_BACKGROUND_COLOR_LIGHT",
+												  "_FOREGROUND_COLOR_DARK",
+												  "_FOREGROUND_COLOR_LIGHT"])
 
 # Define the class with private attributes
 @catan_generator_gui_decorator
