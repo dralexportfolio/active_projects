@@ -101,6 +101,9 @@ for sim_index in tqdm(range(n_simulations)):
 	if seed is not None:
 		seed += 1
 
+# Commit changes to db file now that the simulations are done
+connection_manager.commit()
+
 
 #########################################################
 ### Analyze the simulations and create relevant plots ###
