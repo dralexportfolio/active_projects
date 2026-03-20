@@ -43,11 +43,11 @@ sun_angle = 120
 sun_attitude = 35
 
 # Define the lists of keys shared between multiple dictionaries
-all_game_modes = ["Original: 3-4 Player", "Original: 5-6 Player", "Seafarers: 3-4 Player", "Seafarers: 5-6 Player"]
-all_tile_types = ["brick", "sheep", "stone", "wheat", "wood", "desert", "gold", "water"]
+ALL_GAME_MODES = ["Original: 3-4 Player", "Original: 5-6 Player", "Seafarers: 3-4 Player", "Seafarers: 5-6 Player"]
+ALL_TILE_TYPES = ["brick", "sheep", "stone", "wheat", "wood", "desert", "gold", "water"]
 
 # Define a dictionary of number counts for each game mode
-number_counts_per_mode = {
+NUMBER_COUNTS_PER_MODE = {
 	"Original: 3-4 Player": {		# 20 total
 		2: 1,
 		3: 2,
@@ -99,7 +99,7 @@ number_counts_per_mode = {
 }
 
 # Define a dictionary of tile count per row for each game mode
-row_counts_per_mode = {
+ROW_COUNTS_PER_MODE = {
 	"Original: 3-4 Player": [3, 4, 5, 4, 3],
 	"Original: 5-6 Player": [3, 4, 5, 6, 5, 4, 3],
 	"Seafarers: 3-4 Player": [5, 6, 7, 6, 7, 6, 5],
@@ -107,7 +107,7 @@ row_counts_per_mode = {
 }
 
 # Define a dictionary of tile count per type for each game mode
-tile_counts_per_mode = {
+TILE_COUNTS_PER_MODE = {
 	"Original: 3-4 Player": {		# 19 total, 18 with numbers
 		"brick": 3,
 		"sheep": 4,
@@ -151,7 +151,7 @@ tile_counts_per_mode = {
 }
 
 # Define the target efficiency values for each tile
-target_efficiency_per_tile = {
+TARGET_EFFICIENCY_PER_TILE = {
 	"brick": 0.95,
 	"sheep": 0.95,
 	"stone": 0.95,
@@ -163,7 +163,7 @@ target_efficiency_per_tile = {
 }
 
 # Define the colors used for each tile
-colors_per_tile = {
+COLOR_PER_TILE = {
 	"brick": RGB((180, 60, 30)),
 	"sheep": RGB((20, 200, 50)),
 	"stone": RGB((127, 127, 127)),
@@ -175,9 +175,9 @@ colors_per_tile = {
 }
 
 # Define any additional object colors
-circle_color = RGB((210, 170, 110))
-low_prob_number_color = RGB((0, 0, 0))
-high_prob_number_color = RGB((200, 0, 0))
+CIRCLE_COLOR = RGB((210, 170, 110))
+LOW_PROB_NUMBER_COLOR = RGB((0, 0, 0))
+HIGH_PROB_NUMBER_COLOR = RGB((200, 0, 0))
 
 # Define a marginal Shannon entropy function
 def computeMarginalEntropy(prob_value:Any) -> float:
@@ -214,7 +214,7 @@ class CatanGeneratorTiling:
 	### Initialize the class ###
 	def __init__(self, game_mode:str):
 		# Verify the inputs
-		assert game_mode in all_game_modes, "CatanGeneratorTiling::__init__: Provided value for 'game_mode' must be contained in the list all_game_modes"
+		assert game_mode in ALL_GAME_MODES, "CatanGeneratorTiling::__init__: Provided value for 'game_mode' must be contained in the list ALL_GAME_MODES"
 
 		# Store the provided values
 		self._game_mode = game_mode
@@ -230,7 +230,7 @@ class CatanGeneratorTiling:
 			random.seed(seed = seed)
 
 		# Set the number of polygons based on the game mode
-		self._n_polygons = sum(row_counts_per_mode[self._game_mode])
+		self._n_polygons = sum(ROW_COUNTS_PER_MODE[self._game_mode])
 
 		# Create a list of all polygons objects to be passed to the Board object
 		all_polygons = [HEXAGON_REGULAR_TALL for _ in range(self._n_polygons)]
@@ -238,10 +238,10 @@ class CatanGeneratorTiling:
 		# Create the lists of x-value and y-value shifts associated with each polygon
 		x_shift_per_polygon = []
 		y_shift_per_polygon = []
-		for row_index in range(len(row_counts_per_mode[self._game_mode])):
+		for row_index in range(len(ROW_COUNTS_PER_MODE[self._game_mode])):
 			y_shift = 3 / 2 * row_index
-			for col_index in range(row_counts_per_mode[self._game_mode][row_index]):
-				x_shift = sqrt(3) * (col_index - row_counts_per_mode[self._game_mode][row_index] / 2)
+			for col_index in range(ROW_COUNTS_PER_MODE[self._game_mode][row_index]):
+				x_shift = sqrt(3) * (col_index - ROW_COUNTS_PER_MODE[self._game_mode][row_index] / 2)
 				x_shift_per_polygon.append(x_shift)
 				y_shift_per_polygon.append(y_shift)
 
@@ -260,8 +260,8 @@ class CatanGeneratorTiling:
 		self._tile_per_polygon = []
 		# Create the list of currently selectable tiles given the current game mode
 		possible_tiles = []
-		for tile_type in tile_counts_per_mode[self._game_mode]:
-			for _ in range(tile_counts_per_mode[self._game_mode][tile_type]):
+		for tile_type in TILE_COUNTS_PER_MODE[self._game_mode]:
+			for _ in range(TILE_COUNTS_PER_MODE[self._game_mode][tile_type]):
 				possible_tiles.append(tile_type)
 		# Perform the tiling assignment to each polygon
 		for polygon_index in range(self._n_polygons):
@@ -272,7 +272,7 @@ class CatanGeneratorTiling:
 			self._tile_per_polygon.append(selected_tile_type)
 
 		# Get the tile types which actually appear in this particular tiling, also compute the resulting maximum entropy
-		self._needed_tile_types = [tile_type for tile_type in all_tile_types if tile_type in self._tile_per_polygon]
+		self._needed_tile_types = [tile_type for tile_type in ALL_TILE_TYPES if tile_type in self._tile_per_polygon]
 		self._maximum_entropy = log2(len(self._needed_tile_types))
 
 		# Determine the indices adjacent to each polygon on the board
@@ -429,7 +429,7 @@ class CatanGeneratorTiling:
 		# Compute the differences between actual and target efficiencies as the raw error values
 		raw_error_by_tile = {}
 		for tile_type in self._needed_tile_types:
-			raw_error_by_tile[tile_type] = pre_efficiency_by_tile[tile_type] - target_efficiency_per_tile[tile_type]
+			raw_error_by_tile[tile_type] = pre_efficiency_by_tile[tile_type] - TARGET_EFFICIENCY_PER_TILE[tile_type]
 
 		# Normalize these errors to be between 0 and 1 (i.e. 1 is for the most above, -1 is for the most below, 0.5 is exactly correct)
 		# Fetch the largest magnitude raw error
@@ -520,8 +520,8 @@ class CatanGeneratorTiling:
 		post_mean_squared_error = 0
 		denominator = len(self._needed_tile_types)
 		for tile_type in self._needed_tile_types:
-			pre_mean_squared_error += (target_efficiency_per_tile[tile_type] - pre_efficiency_by_tile[tile_type])**2 / denominator
-			post_mean_squared_error += (target_efficiency_per_tile[tile_type] - post_efficiency_by_tile[tile_type])**2 / denominator
+			pre_mean_squared_error += (TARGET_EFFICIENCY_PER_TILE[tile_type] - pre_efficiency_by_tile[tile_type])**2 / denominator
+			post_mean_squared_error += (TARGET_EFFICIENCY_PER_TILE[tile_type] - post_efficiency_by_tile[tile_type])**2 / denominator
 		# Add these results to the dictionary
 		swap_results["pre_mean_squared_error"] = pre_mean_squared_error
 		swap_results["post_mean_squared_error"] = post_mean_squared_error
@@ -544,7 +544,7 @@ class CatanGeneratorTiling:
 		# Assign the correct colors to each polygon
 		for polygon_index in range(self._n_polygons):
 			selected_tile_type = self._tile_per_polygon[polygon_index]
-			self._board.setTintShade(tint_shade = colors_per_tile[selected_tile_type], polygon_index = polygon_index)
+			self._board.setTintShade(tint_shade = COLOR_PER_TILE[selected_tile_type], polygon_index = polygon_index)
 
 		# Create the rendered image and return it
 		return self._board.render(dpi = dpi)
