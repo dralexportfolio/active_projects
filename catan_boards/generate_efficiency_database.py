@@ -22,7 +22,7 @@ from sqlite3_helper import addTable, appendRow, ConnectionManager, getRowCount, 
 from tkinter_helper import askSaveFilename
 
 # External modules
-from numpy import quantile, random
+from numpy import quantile
 import plotly.graph_objects as go
 from tqdm import tqdm
 
