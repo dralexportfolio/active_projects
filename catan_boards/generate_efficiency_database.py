@@ -41,8 +41,8 @@ skew_power = 0
 reject_flag = False
 
 # Number of simulations to run and number of swaps to run per simulation
-n_simulations = 10
-n_steps_per_simulation = 10000
+n_simulations = 20
+n_steps_per_simulation = 1000
 
 
 #################################################################
@@ -72,14 +72,9 @@ addTable(connection_manager = connection_manager, table_name = table_name, colum
 ######################################################################
 ### Run the needed simulations and save the results to the db file ###
 ######################################################################
-# Set the random seed (if needed)
-if seed is not None:
-	random.seed(seed = seed)
-
-# Execute the simulation and write the needed information to the db file
 for sim_index in tqdm(range(n_simulations)):
 	# Create the tiling to use for this simulation
-	current_tiling = CatanGeneratorTiling(game_mode = game_mode)
+	current_tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
 
 	# Randomly swap tiles for the needed number of simulation steps
 	for step_index in range(n_steps_per_simulation):
@@ -101,6 +96,10 @@ for sim_index in tqdm(range(n_simulations)):
 		for tile_type in ALL_TILE_TYPES:
 			new_row.append(pre_efficiency_by_tile[tile_type])
 		appendRow(connection_manager = connection_manager, table_name = table_name, new_row = new_row)
+
+	# Iterate the random seed (if needed)
+	if seed is not None:
+		seed += 1
 
 
 #########################################################

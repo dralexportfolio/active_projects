@@ -212,18 +212,21 @@ catan_generator_tiling_decorator = privacyDecorator(["_adjacency_matrix",					# 
 @catan_generator_tiling_decorator
 class CatanGeneratorTiling:
 	### Initialize the class ###
-	def __init__(self, game_mode:str):
+	def __init__(self, game_mode:str, seed:int = None):
 		# Verify the inputs
 		assert game_mode in ALL_GAME_MODES, "CatanGeneratorTiling::__init__: Provided value for 'game_mode' must be contained in the list ALL_GAME_MODES"
+		if seed is not None:
+			assert type(seed) == int, "CatanGeneratorTiling::__init__: If provided, value for 'seed' must be an int object"
+			assert 0 <= seed and seed < 2**32, "CatanGeneratorTiling::__init__: If provided, value for 'seed' must be >= 0 and < 2^32"
 
 		# Store the provided values
 		self._game_mode = game_mode
 
 		# Initialize a new tiling given the current game mode
-		self._initializeTiling()
+		self._initializeTiling(seed = seed)
 
 	### Define a function for randomly initializing the tiling information ###
-	def _initializeTiling(self):
+	def _initializeTiling(self, seed:int):
 		# Perform all steps necessary for obtaining an initial tiling
 		# Set the random seed (if needed)
 		if seed is not None:
@@ -614,7 +617,7 @@ if __name__ == "__main__":
 	from tqdm import tqdm
 	dpi = 300
 
-	tiling = CatanGeneratorTiling(game_mode = game_mode)
+	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
 	tiling.render(dpi = dpi).save("pre.png")
 
 	for index in tqdm(range(10000)):
