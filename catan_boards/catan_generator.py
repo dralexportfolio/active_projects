@@ -611,8 +611,8 @@ class CatanGeneratorGUI:
 if __name__ == "__main__":
 	#game_mode = "Original: 3-4 Player"
 	#game_mode = "Original: 5-6 Player"
-	game_mode = "Seafarers: 3-4 Player"
-	#game_mode = "Seafarers: 5-6 Player"
+	#game_mode = "Seafarers: 3-4 Player"
+	game_mode = "Seafarers: 5-6 Player"
 
 	from tqdm import tqdm
 	dpi = 300
@@ -620,7 +620,7 @@ if __name__ == "__main__":
 	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
 	tiling.render(dpi = dpi).save("pre.png")
 
-	for index in tqdm(range(10000)):
-		tiling.swapTiles(skew_power = 1, reject_flag = True)
+	for index in tqdm(range(1000)):
+		tiling.swapTiles(skew_power = 0.5, reject_flag = True)
 
 	tiling.render(dpi = dpi).save("post.png")
