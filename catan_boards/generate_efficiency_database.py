@@ -16,15 +16,12 @@ path.insert(0, str(infrastructure_folder.joinpath("board_games")))
 path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 
 # Internal modules
-from Board import Board
-from color_helper import ALL_PLOTLY_COLOR_SCALES_BY_TYPE, customSpectrum, RGB
-from Polygon import HEXAGON_REGULAR_TALL
+from catan_generator import ALL_TILE_TYPES, CatanGeneratorTiling
+from color_helper import ALL_PLOTLY_COLOR_SCALES_BY_TYPE, customSpectrum
 from sqlite3_helper import addTable, appendRow, ConnectionManager, getRowCount, readColumn, readEntry
 from tkinter_helper import askSaveFilename
-from type_helper import tolerantlyCompare
 
 # External modules
-from math import log2, sqrt
 from numpy import quantile, random
 import plotly.graph_objects as go
 from tqdm import tqdm
@@ -36,117 +33,16 @@ from tqdm import tqdm
 # Define the random seed to use
 seed = 0
 
-# Flag for rejecting bad changes
+# Game mode to use
+game_mode = "Seafarers: 5-6 Player"
+
+# Swap settings
+skew_power = 0
 reject_flag = False
 
 # Number of simulations to run and number of swaps to run per simulation
-n_simulations = 20
-n_steps_per_simulation = 1000
-
-# Number of hexagons per side of board
-n_hexagons_per_side = 5
-
-# Set the names of the possible tile types
-all_tile_types = ["brick", "sheep", "stone", "wheat", "wood", "desert", "gold", "water"]
-
-# Tile types and likelihoods
-likelihoods_per_tile = {
-	"brick": 0.1,
-	"sheep": 0.1,
-	"stone": 0.1,
-	"wheat": 0.1,
-	"wood": 0.1,
-	"desert": 0.05,
-	"gold": 0.05,
-	"water": 0.4
-}
-
-# Define the colors used for each tile
-colors_per_tile = {
-	"brick": RGB((180, 60, 30)),
-	"sheep": RGB((20, 200, 50)),
-	"stone": RGB((127, 127, 127)),
-	"wheat": RGB((250, 230, 20)),
-	"wood": RGB((10, 80, 10)),
-	"desert": RGB((230, 210, 150)),
-	"gold": RGB((160, 140, 50)),
-	"water": RGB((80, 210, 240))
-}
-
-# Define the default bevel and sun information
-bevel_attitude = 25
-bevel_size = 0.1
-sun_angle = 120
-sun_attitude = 35
-
-# Board rendering information
-debug_flag = False
-dpi = 600
-
-
-###############################################################################
-### Perform the setup required for creating the overall layout of the board ###
-###############################################################################
-# Set the number of hexagons in each row of the board
-row_counts = []
-for index in range(n_hexagons_per_side):
-	row_counts.append(n_hexagons_per_side + index)
-for index in range(n_hexagons_per_side - 1):
-	row_counts.append(2 * n_hexagons_per_side - index - 2)
-
-# Set the number of polygons based on the row counts
-n_polygons = sum(row_counts)
-
-# Create a list of all polygons objects to be passed to the Board object
-all_polygons = [HEXAGON_REGULAR_TALL for _ in range(n_polygons)]
-
-# Create the lists of x-value and y-value shifts associated with each polygon
-x_shift_per_polygon = []
-y_shift_per_polygon = []
-for row_index in range(len(row_counts)):
-	y_shift = 3 / 2 * row_index
-	for col_index in range(row_counts[row_index]):
-		x_shift = sqrt(3) * (col_index - row_counts[row_index] / 2)
-		x_shift_per_polygon.append(x_shift)
-		y_shift_per_polygon.append(y_shift)
-
-# Create and store the Board object for the tiling
-board = Board(n_polygons = n_polygons,
-			  all_polygons = all_polygons,
-			  x_shift_per_polygon = x_shift_per_polygon,
-			  y_shift_per_polygon = y_shift_per_polygon)
-
-# Apply the selected bevel and sun information to the board
-board.preprocessBevelInfo(bevel_attitude = bevel_attitude, bevel_size = bevel_size)
-board.preprocessAllSunInfo(sun_angle = sun_angle, sun_attitude = sun_attitude)
-
-# Display the board for debugging (if needed)
-if debug_flag == True:
-	board.render(dpi = dpi).show()
-
-# Determine the indices adjacent to each polygon on the board
-# Initialize the needed storage
-neighbor_indices_per_polygon = {}
-for polygon_index in range(n_polygons):
-	neighbor_indices_per_polygon[polygon_index] = []
-# Compute the theoretically correct distance for adjacent polygons
-theoretical_distance = sqrt(3)
-# Mark which polygons are adjacent to which other polygons
-for polygon_index_1 in range(n_polygons - 1):
-	# Get the x-shift and y-shift for the 1st polygon
-	x_shift_1 = x_shift_per_polygon[polygon_index_1]
-	y_shift_1 = y_shift_per_polygon[polygon_index_1]
-	# Loop over the needed other polygons
-	for polygon_index_2 in range(polygon_index_1 + 1, n_polygons):
-		# Get the x-shift and y-shift for the 2nd polygon
-		x_shift_2 = x_shift_per_polygon[polygon_index_2]
-		y_shift_2 = y_shift_per_polygon[polygon_index_2]
-		# Compute the actual distances between the centers of these polygons
-		actual_distance = sqrt((x_shift_1 - x_shift_2)**2 + (y_shift_1 - y_shift_2)**2)
-		# Mark that the polygons are adjacent if the distance is correct (within a margin of error)
-		if tolerantlyCompare(actual_distance, "==", theoretical_distance, threshold = 10**-3):
-			neighbor_indices_per_polygon[polygon_index_1].append(polygon_index_2)
-			neighbor_indices_per_polygon[polygon_index_2].append(polygon_index_1)
+n_simulations = 10
+n_steps_per_simulation = 10000
 
 
 #################################################################
@@ -165,7 +61,7 @@ table_name = "sim_results"
 # Set the column names and types for this table
 column_names = ["sim_index", "step_index", "tile_type_1", "tile_type_2", "pre_mean_squared_error", "post_mean_squared_error", "delta_mean_squared_error"]
 column_types = ["BIGINT", "BIGINT", "TEXT", "TEXT", "FLOAT", "FLOAT", "FLOAT"]
-for tile_type in all_tile_types:
+for tile_type in ALL_TILE_TYPES:
 	column_names.append(tile_type + "_pre_efficiency")
 	column_types.append("FLOAT")
 
@@ -180,143 +76,30 @@ addTable(connection_manager = connection_manager, table_name = table_name, colum
 if seed is not None:
 	random.seed(seed = seed)
 
-# Define function for computing the entropy information of a given tiling
-def computeEntropyInfo(needed_tile_types:list, tile_per_polygon:list) -> dict:
-	# Verify the inputs
-	# Needed tile types
-	assert type(needed_tile_types) == list, "computeEntropyInfo: Provided value for 'computeEntropyInfo' must be a list object"
-	assert len(needed_tile_types) == len(set(needed_tile_types)), "computeEntropyInfo: Provided value for 'computeEntropyInfo' must be a list of distinct entries"
-	assert len(needed_tile_types) >= 2, "computeEntropyInfo: Provided value for 'computeEntropyInfo' must be a list with at least two entries"
-	for value in needed_tile_types:
-		assert value in all_tile_types, "computeEntropyInfo: Provided value for 'computeEntropyInfo' must be a list with entries that are valid tile types"
-	# Tile types for each polygon
-	assert type(tile_per_polygon) == list, "computeEntropyInfo: Provided value for 'tile_per_polygon' must be a list object"
-	assert len(tile_per_polygon) == n_polygons, "computeEntropyInfo: Provided value for 'tile_per_polygon' must be a list of length equal to the number of polygons"
-	assert set(tile_per_polygon) == set(needed_tile_types), "computeEntropyInfo: Provided value for 'tile_per_polygon' must have exactly the entries contained in 'needed_tile_types'"
-
-	# Compute the theoretically maximum entropy
-	maximum_entropy = log2(len(needed_tile_types))
-
-	# Initialize the needed storage dictionaries
-	# Create the main dictionaries
-	neighbor_counts_per_tile = {}
-	neighbor_probs_per_tile = {}
-	entropy_by_tile = {}
-	efficiency_by_tile = {}
-	# Loop over the needed tile types and add more information
-	for tile_type_1 in needed_tile_types:
-		# Add in the storage at this level
-		neighbor_counts_per_tile[tile_type_1] = {}
-		neighbor_probs_per_tile[tile_type_1] = {}
-		entropy_by_tile[tile_type_1] = 0
-		efficiency_by_tile[tile_type_1] = 0
-		# Loop over secondary tile types for the counts and probabilities
-		for tile_type_2 in needed_tile_types:
-			neighbor_counts_per_tile[tile_type_1][tile_type_2] = 0
-			neighbor_probs_per_tile[tile_type_1][tile_type_2] = 0
-
-	# Count the number of neighbors of each tile type belonging to each type of tile
-	for polygon_index_1 in range(n_polygons):
-		tile_type_1 = tile_per_polygon[polygon_index_1]
-		for polygon_index_2 in neighbor_indices_per_polygon[polygon_index_1]:
-			tile_type_2 = tile_per_polygon[polygon_index_2]
-			neighbor_counts_per_tile[tile_type_1][tile_type_2] += 1
-
-	# Convert the neighbor counts to probabilities of neighbor types
-	for tile_type_1 in needed_tile_types:
-		n_neighbors = sum(list(neighbor_counts_per_tile[tile_type_1].values()))
-		for tile_type_2 in needed_tile_types:
-			neighbor_probs_per_tile[tile_type_1][tile_type_2] = neighbor_counts_per_tile[tile_type_1][tile_type_2] / n_neighbors
-
-	# Compute the Shannon entropy of each tile type's distribution
-	for tile_type_1 in needed_tile_types:
-		for tile_type_2 in needed_tile_types:
-			prob_value = neighbor_probs_per_tile[tile_type_1][tile_type_2]
-			if prob_value not in [0, 1]:
-				entropy_by_tile[tile_type_1] += prob_value * log2(1 / prob_value)
-
-	# Compute the efficiency (i.e. normalized entropy) of each tile type's distribution
-	for tile_type in needed_tile_types:
-		efficiency_by_tile[tile_type] = entropy_by_tile[tile_type] / maximum_entropy
-
-	# Compute the mean squared error between the theoretical and actual entropy values
-	mean_squared_error = 0
-	for tile_type in needed_tile_types:
-		if tile_type == "water":
-			# Water should have low entropy
-			mean_squared_error += entropy_by_tile[tile_type]**2 / len(needed_tile_types)
-		else:
-			# All other tile types should have high entropy
-			mean_squared_error += (maximum_entropy - entropy_by_tile[tile_type])**2 / len(needed_tile_types)
-
-	# Construct the dictionary of results
-	all_entropy_results = {
-		"neighbor_counts_per_tile": neighbor_counts_per_tile,
-		"neighbor_probs_per_tile": neighbor_probs_per_tile,
-		"entropy_by_tile":  entropy_by_tile,
-		"efficiency_by_tile": efficiency_by_tile,
-		"mean_squared_error": mean_squared_error
-	}
-
-	# Return the results
-	return all_entropy_results
-
 # Execute the simulation and write the needed information to the db file
 for sim_index in tqdm(range(n_simulations)):
-	# Create a random initial tiling of the board using the probabilities
-	tile_per_polygon = []
-	for _ in range(n_polygons):
-		selected_tile_type = random.choice(a = list(likelihoods_per_tile.keys()), p = list(likelihoods_per_tile.values()))
-		tile_per_polygon.append(selected_tile_type)
-
-	# Get the tile types which actually appear in this particular tiling
-	needed_tile_types = [tile_type for tile_type in all_tile_types if tile_type in tile_per_polygon]
+	# Create the tiling to use for this simulation
+	current_tiling = CatanGeneratorTiling(game_mode = game_mode)
 
 	# Randomly swap tiles for the needed number of simulation steps
 	for step_index in range(n_steps_per_simulation):
-		# Compute all relevant pre-swap entropy information
-		pre_all_entropy_results = computeEntropyInfo(needed_tile_types = needed_tile_types, tile_per_polygon = tile_per_polygon)
+		# Execute a random swap and get the needed results
+		swap_results = current_tiling.swapTiles(skew_power = skew_power, reject_flag = reject_flag)
 
-		# Randomly select two tile types to be swapped
-		tile_type_1 = None
-		tile_type_2 = None
-		while tile_type_1 == tile_type_2:
-			tile_type_1 = random.choice(a = needed_tile_types)
-			tile_type_2 = random.choice(a = needed_tile_types)
-
-		# Get the indices of polygons associated with these tile types
-		possible_indices_1 = [polygon_index for polygon_index in range(n_polygons) if tile_per_polygon[polygon_index] == tile_type_1]
-		possible_indices_2 = [polygon_index for polygon_index in range(n_polygons) if tile_per_polygon[polygon_index] == tile_type_2]
-
-		# Randomly select the indices to switch
-		polygon_index_1 = random.choice(a = possible_indices_1)
-		polygon_index_2 = random.choice(a = possible_indices_2)
-
-		# Perform the needed tile swap for these polygons
-		tile_per_polygon[polygon_index_1] = tile_type_2
-		tile_per_polygon[polygon_index_2] = tile_type_1
-
-		# Compute all relevant post-swap entropy information
-		post_all_entropy_results = computeEntropyInfo(needed_tile_types = needed_tile_types, tile_per_polygon = tile_per_polygon)
-
-		# Undo the changes in the case of a bad swap(if needed)
-		if reject_flag == True and post_all_entropy_results["mean_squared_error"] > pre_all_entropy_results["mean_squared_error"]:
-			tile_per_polygon[polygon_index_1] = tile_type_1
-			tile_per_polygon[polygon_index_2] = tile_type_2
-			post_all_entropy_results = pre_all_entropy_results
+		# Extract the needed values from the swap results
+		tile_type_1 = swap_results["tile_type_1"]
+		tile_type_2 = swap_results["tile_type_2"]
+		pre_mean_squared_error = swap_results["pre_mean_squared_error"]
+		post_mean_squared_error = swap_results["post_mean_squared_error"]
+		pre_efficiency_by_tile = swap_results["pre_efficiency_by_tile"]
 
 		# Write the needed information to the db file
 		# Get the row index for the new row
 		row_index = getRowCount(connection_manager = connection_manager, table_name = table_name)
 		# Create a list containing the new row information
-		new_row = [sim_index, step_index, tile_type_1, tile_type_2, pre_all_entropy_results["mean_squared_error"], post_all_entropy_results["mean_squared_error"],
-				   post_all_entropy_results["mean_squared_error"] - pre_all_entropy_results["mean_squared_error"]]
-		for tile_type in all_tile_types:
-			if tile_type in needed_tile_types:
-				new_row.append(pre_all_entropy_results["efficiency_by_tile"][tile_type])
-			else:
-				new_row.append(0)
-		# Add the new row to the db file
+		new_row = [sim_index, step_index, tile_type_1, tile_type_2, pre_mean_squared_error, post_mean_squared_error, post_mean_squared_error - pre_mean_squared_error]
+		for tile_type in ALL_TILE_TYPES:
+			new_row.append(pre_efficiency_by_tile[tile_type])
 		appendRow(connection_manager = connection_manager, table_name = table_name, new_row = new_row)
 
 
