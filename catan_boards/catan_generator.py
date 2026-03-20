@@ -27,13 +27,14 @@ from type_helper import isNumeric, tolerantlyCompare
 from math import log2, sqrt
 from numpy import random
 from PIL import Image
+from typing import Any
 
 
 #####################################################
 ### Define important shared settings for the game ###
 #####################################################
 # Define the random seed to use
-seed = 0
+seed = 1
 
 # Define the default bevel and sun information
 bevel_attitude = 25
@@ -389,100 +390,153 @@ class CatanGeneratorTiling:
 			self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] += 1
 
 	### Define a function for swapping two tiles in an attempt to improve the tiling ###
-	def swapTiles(self, skew_power:Any = 1, reject_flag:bool = False):
-		# Swap two tiles in an attempt to improve relevant entropy values
+	def swapTiles(self, skew_power:Any = 1, reject_flag:bool = False) -> dict:
+		# Swap two tiles in an attempt to improve relevant entropy values, return a dictionary of relevant results
 		# Verify the inputs
 		assert isNumeric(skew_power, include_numpy_flag = True) == True, "CatanGeneratorTiling::swapTiles: Provided value for 'skew_power' must be numeric"
 		assert 0 <= skew_power, "CatanGeneratorTiling::swapTiles: Provided value for 'skew_power' must be non-negative"
 		assert type(reject_flag) == bool, "CatanGeneratorTiling::swapTiles: Provided value for 'reject_flag' must be a bool object"
 
-		# Compute the current entropy values
-		old_entropy_by_tile = self._computeEntropyPerTileType()
+		# Initialize the dictionary of relevant results
+		swap_results = {}
+		swap_results["skew_power"] = skew_power
+		swap_results["reject_flag"] = reject_flag
+		swap_results["pre_entropy_by_tile"] = None
+		swap_results["post_entropy_by_tile"] = None
+		swap_results["pre_efficiency_by_tile"] = None
+		swap_results["post_efficiency_by_tile"] = None
+		swap_results["pre_mean_squared_error"] = None
+		swap_results["post_mean_squared_error"] = None
+		swap_results["probability_1_by_tile"] = None
+		swap_results["probability_2_by_tile"] = None
+		swap_results["tile_type_1"] = None
+		swap_results["tile_type_2"] = None
+		swap_results["polygon_index_1"] = None
+		swap_results["polygon_index_2"] = None
+		swap_results["swap_accepted_flag"] = None
 
-		# Compute the efficiency (i.e. normalized entropy) of each tile type's distribution
-		efficiency_by_tile = {}
+		# Compute the pre-swap entropy and efficiency (i.e. normalized entropy) values and add to the results dictionary
+		# Get the needed entropy values for each distribution
+		pre_entropy_by_tile = self._computeEntropyPerTileType()
+		# Convert to the efficiency values
+		pre_efficiency_by_tile = {}
 		for tile_type in self._needed_tile_types:
-			efficiency_by_tile[tile_type] = old_entropy_by_tile[tile_type] / self._maximum_entropy
+			pre_efficiency_by_tile[tile_type] = pre_entropy_by_tile[tile_type] / self._maximum_entropy
+		# Add these results to the dictionary
+		swap_results["pre_entropy_by_tile"] = pre_entropy_by_tile
+		swap_results["pre_efficiency_by_tile"] = pre_efficiency_by_tile
 
-		# Compute the probability values for the 1st and 2nd tile type distributions using the provided skew power
+		# Compute the differences between actual and target efficiencies as the raw error values
+		raw_error_by_tile = {}
+		for tile_type in self._needed_tile_types:
+			raw_error_by_tile[tile_type] = pre_efficiency_by_tile[tile_type] - target_efficiency_per_tile[tile_type]
+
+		# Normalize these errors to be between 0 and 1 (i.e. 1 is for the most above, -1 is for the most below, 0.5 is exactly correct)
+		# Fetch the largest magnitude raw error
+		max_abs_raw_error = max([abs(raw_error_by_tile[tile_type]) for tile_type in self._needed_tile_types])
+		# Compute the normalized errors
+		normalized_error_by_tile = {}
+		for tile_type in self._needed_tile_types:
+			normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / (2 * max_abs_raw_error)
+
+		# Compute the probability values for the 1st and 2nd tile type distributions using the provided skew power and add to the results dictionary
+		# General idea: Tile type 1 should be a tile above its target efficiency, tile type 2 should be a tile below its target efficiency
 		# Initialize the needed dictionaries
 		pseudo_probability_1_by_tile = {}
 		pseudo_probability_2_by_tile = {}
 		probability_1_by_tile = {}
 		probability_2_by_tile = {}
+		# Compute the minimum and maximum normalized errors (needed for infinite skew powers)
+		min_normalized_error = min(list(normalized_error_by_tile.values()))
+		max_normalized_error = max(list(normalized_error_by_tile.values()))
 		# Loop over the tile types to get the pseudo-probabilities
 		for tile_type in self._needed_tile_types:
-			if tile_type == "water":
-				# When efficiency is high, make water likely for tile type 1 and unlikely for tile type 2
-				if skew_power < float("inf"):
-					pseudo_probability_1_by_tile[tile_type] = efficiency_by_tile[tile_type]**skew_power
-					pseudo_probability_2_by_tile[tile_type] = (1 - efficiency_by_tile[tile_type])**skew_power
-				elif efficiency_by_tile[tile_type] == 0:
-					pseudo_probability_1_by_tile[tile_type] = 0
-					pseudo_probability_2_by_tile[tile_type] = 1
-				elif efficiency_by_tile[tile_type] == 1:
-					pseudo_probability_1_by_tile[tile_type] = 1
-					pseudo_probability_2_by_tile[tile_type] = 0
-				else:
-					pseudo_probability_1_by_tile[tile_type] = 1
-					pseudo_probability_2_by_tile[tile_type] = 1
+			# When efficiency is higher than needed, make likely for tile type 1 and unlikely for tile type 2 (and vice versa)
+			if skew_power < float("inf"):
+				# For finite skew power, simply raise normalized error and 1 - normalized error to that power
+				pseudo_probability_1_by_tile[tile_type] = normalized_error_by_tile[tile_type]**skew_power
+				pseudo_probability_2_by_tile[tile_type] = (1 - normalized_error_by_tile[tile_type])**skew_power
 			else:
-				# When efficiency is high, make this type likely for tile type 1 and unlikely for tile type 2
-				if skew_power < float("inf"):
-					pseudo_probability_1_by_tile[tile_type] = (1 - efficiency_by_tile[tile_type])**skew_power
-					pseudo_probability_2_by_tile[tile_type] = efficiency_by_tile[tile_type]**skew_power
-				elif efficiency_by_tile[tile_type] == 0:
+				# In the limit, probability 1 will only be non-zero if the normalized error is the maximum value
+				if normalized_error_by_tile[tile_type] == max_normalized_error:
 					pseudo_probability_1_by_tile[tile_type] = 1
-					pseudo_probability_2_by_tile[tile_type] = 0
-				elif efficiency_by_tile[tile_type] == 1:
+				else:
 					pseudo_probability_1_by_tile[tile_type] = 0
+				# In the limit, probability 2 will only be non-zero if the normalized error is the minimum value
+				if normalized_error_by_tile[tile_type] == min_normalized_error:
 					pseudo_probability_2_by_tile[tile_type] = 1
 				else:
-					pseudo_probability_1_by_tile[tile_type] = 1
-					pseudo_probability_2_by_tile[tile_type] = 1
+					pseudo_probability_2_by_tile[tile_type] = 0
 		# Convert the pseudo-probabilities to probabilities by normalizing
 		normalizer_1 = sum(list(pseudo_probability_1_by_tile.values()))
 		normalizer_2 = sum(list(pseudo_probability_2_by_tile.values()))
 		for tile_type in self._needed_tile_types:
 			probability_1_by_tile[tile_type] = pseudo_probability_1_by_tile[tile_type] / normalizer_1
 			probability_2_by_tile[tile_type] = pseudo_probability_2_by_tile[tile_type] / normalizer_2
+		# Add these results to the dictionary
+		swap_results["probability_1_by_tile"] = probability_1_by_tile
+		swap_results["probability_2_by_tile"] = probability_2_by_tile
 
-		# Randomly select the tile types to use in the swap
+		# Randomly select the tile types to use in the swap and add to the results dictionary
+		# Select the tile types and make sure they are distinct
 		while True:
-			tile_type_1 = random.choice(a = list(probability_1_by_tile.keys()), p = list(probability_1_by_tile.values()))
-			tile_type_2 = random.choice(a = list(probability_2_by_tile.keys()), p = list(probability_2_by_tile.values()))
+			tile_type_1 = str(random.choice(a = list(probability_1_by_tile.keys()), p = list(probability_1_by_tile.values())))
+			tile_type_2 = str(random.choice(a = list(probability_2_by_tile.keys()), p = list(probability_2_by_tile.values())))
 			if tile_type_1 != tile_type_2:
 				break
+		# Add these results to the dictionary
+		swap_results["tile_type_1"] = tile_type_1
+		swap_results["tile_type_2"] = tile_type_2
 
 		# Get the indices of polygons associated with these tile types
 		possible_indices_1 = [polygon_index for polygon_index in range(self._n_polygons) if self._tile_per_polygon[polygon_index] == tile_type_1]
 		possible_indices_2 = [polygon_index for polygon_index in range(self._n_polygons) if self._tile_per_polygon[polygon_index] == tile_type_2]
 
-		# Randomly select the indices to switch
-		polygon_index_1 = random.choice(a = possible_indices_1)
-		polygon_index_2 = random.choice(a = possible_indices_2)
+		# Randomly select the indices to switch and add to the results dictionary
+		# Select the polygon indices
+		polygon_index_1 = int(random.choice(a = possible_indices_1))
+		polygon_index_2 = int(random.choice(a = possible_indices_2))
+		# Add these results to the dictionary
+		swap_results["polygon_index_1"] = polygon_index_1
+		swap_results["polygon_index_2"] = polygon_index_2
 
 		# Perform the needed tile swap for these polygons by updating internal storage accordingly
 		self._updateStorageDueToSwap(polygon_index_1 = polygon_index_1, polygon_index_2 = polygon_index_2)
 
-		# Compute the updated entropy values
-		new_entropy_by_tile = self._computeEntropyPerTileType()
+		# Compute the post-swap entropy and efficiency (i.e. normalized entropy) values and add to the results dictionary
+		# Get the needed entropy values for each distribution
+		post_entropy_by_tile = self._computeEntropyPerTileType()
+		# Convert to the efficiency values
+		post_efficiency_by_tile = {}
+		for tile_type in self._needed_tile_types:
+			post_efficiency_by_tile[tile_type] = post_entropy_by_tile[tile_type] / self._maximum_entropy
+		# Add these results to the dictionary
+		swap_results["post_entropy_by_tile"] = post_entropy_by_tile
+		swap_results["post_efficiency_by_tile"] = post_efficiency_by_tile
+
+		# Compute the mean squared error for efficiency values relative to the target values and add to the results dictionary
+		# Get the needed MSE values
+		pre_mean_squared_error = 0
+		post_mean_squared_error = 0
+		denominator = len(self._needed_tile_types)
+		for tile_type in self._needed_tile_types:
+			pre_mean_squared_error += (target_efficiency_per_tile[tile_type] - pre_efficiency_by_tile[tile_type])**2 / denominator
+			post_mean_squared_error += (target_efficiency_per_tile[tile_type] - post_efficiency_by_tile[tile_type])**2 / denominator
+		# Add these results to the dictionary
+		swap_results["pre_mean_squared_error"] = pre_mean_squared_error
+		swap_results["post_mean_squared_error"] = post_mean_squared_error
 
 		# Reject the change if it raised the mean squared error of efficiency (if needed)
-		if reject_flag == True:
-			# Compute the mean squared error for efficiency values (e.g. water should be low, all others should be high)
-			old_mean_squared_error = 0
-			new_mean_squared_error = 0
-			denominator = len(self._needed_tile_types)
-			for tile_type in self._needed_tile_types:
-				old_efficiency = old_entropy_by_tile[tile_type] / self._maximum_entropy
-				new_efficiency = new_entropy_by_tile[tile_type] / self._maximum_entropy
-				old_mean_squared_error += (target_efficiency_per_tile[tile_type] - old_efficiency)**2 / denominator
-				new_mean_squared_error += (target_efficiency_per_tile[tile_type] - new_efficiency)**2 / denominator
+		if reject_flag == True and post_mean_squared_error > pre_mean_squared_error:
+			# Undo the changes and mark that the swap was rejected
+			self._updateStorageDueToSwap(polygon_index_1 = polygon_index_1, polygon_index_2 = polygon_index_2)
+			swap_results["swap_accepted_flag"] = False
+		else:
+			# Leave the changes and mark that the swap was accepted
+			swap_results["swap_accepted_flag"] = True
 
-			# Revert the change due to the mean squared error going up (if needed)
-			if new_mean_squared_error > old_mean_squared_error:
-				self._updateStorageDueToSwap(polygon_index_1 = polygon_index_1, polygon_index_2 = polygon_index_2)
+		# Return the results
+		return swap_results
 
 	### Define a function for rendering the tiling ###
 	def render(self, dpi:int) -> Image.Image:
@@ -551,18 +605,19 @@ class CatanGeneratorGUI:
 						br_y_parameter = 1.00,
 						fill_color = self._BACKGROUND_COLOR_LIGHT)
 
-#game_mode = "Original: 3-4 Player"
-#game_mode = "Original: 5-6 Player"
-#game_mode = "Seafarers: 3-4 Player"
-game_mode = "Seafarers: 5-6 Player"
+if __name__ == "__main__":
+	#game_mode = "Original: 3-4 Player"
+	#game_mode = "Original: 5-6 Player"
+	game_mode = "Seafarers: 3-4 Player"
+	#game_mode = "Seafarers: 5-6 Player"
 
-from tqdm import tqdm
-dpi = 300
+	from tqdm import tqdm
+	dpi = 300
 
-tiling = CatanGeneratorTiling(game_mode = game_mode)
-tiling.render(dpi = dpi).show()
+	tiling = CatanGeneratorTiling(game_mode = game_mode)
+	tiling.render(dpi = dpi).save("pre.png")
 
-for index in tqdm(range(1000)):
-	tiling.swapTiles(skew_power = float("inf"), reject_flag = True)
+	for index in tqdm(range(10000)):
+		tiling.swapTiles(skew_power = 1, reject_flag = True)
 
-tiling.render(dpi = dpi).show()
+	tiling.render(dpi = dpi).save("post.png")
