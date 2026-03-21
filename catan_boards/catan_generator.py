@@ -34,7 +34,7 @@ from typing import Any
 ### Define important shared settings for the game ###
 #####################################################
 # Define the random seed to use
-seed = 4
+seed = 2
 
 # Define the default bevel and sun information
 bevel_attitude = 25
@@ -254,10 +254,6 @@ class CatanGeneratorTiling:
 			  				x_shift_per_polygon = x_shift_per_polygon,
 			  				y_shift_per_polygon = y_shift_per_polygon)
 
-		# Apply the selected bevel and sun information to the board
-		self._board.preprocessBevelInfo(bevel_attitude = bevel_attitude, bevel_size = bevel_size)
-		self._board.preprocessAllSunInfo(sun_angle = sun_angle, sun_attitude = sun_attitude)
-
 		# Randomly assigning an initial tile selection to each polygon
 		# Initialize the needed storage
 		self._tile_per_polygon = []
@@ -315,6 +311,20 @@ class CatanGeneratorTiling:
 			for polygon_index_2 in self._neighbor_indices_per_polygon[polygon_index_1]:
 				tile_type_2 = self._tile_per_polygon[polygon_index_2]
 				self._neighbor_counts_per_tile[tile_type_1][tile_type_2] += 1
+
+	### Define external functions for preprocessing bevel and sun information for all polygons ###
+	def preprocessAllBevelInfo(self, bevel_attitude:Any, bevel_size:Any):
+		# Preprocess all information related to the bevel for all polygons on the stored board (leaving error checking to the Board object)
+		self._board.preprocessAllBevelInfo(bevel_attitude = bevel_attitude, bevel_size = bevel_size)
+
+	def preprocessAllSunInfo(self, sun_angle:Any, sun_attitude:Any):
+		# Preprocess all information related to the sun for all polygons on the stored board (leaving error checking to the Board object)
+		self._board.preprocessAllSunInfo(sun_angle = sun_angle, sun_attitude = sun_attitude)
+
+	### Define an external function for closing figures to save on memory ###
+	def closeFigures(self):
+		# Close the figures associated with all polygons on the stored board
+		self._board.closeFigures()
 
 	### Define functions related to computing the Shannon entropy of neighbor distributions for each tile type ###
 	def _computeEntropyPerTileType(self) -> dict:
@@ -552,11 +562,6 @@ class CatanGeneratorTiling:
 		# Create the rendered image and return it
 		return self._board.render(dpi = dpi)
 
-	### Define an external function for closing figures to save on memory ###
-	def closeFigures(self):
-		# Close the figures associated with all polygons on the board
-		self._board.closeFigures()
-
 
 ############################################
 ### Define the board generator GUI class ###
@@ -616,16 +621,18 @@ class CatanGeneratorGUI:
 if __name__ == "__main__":
 	#game_mode = "Original: 3-4 Player"
 	#game_mode = "Original: 5-6 Player"
-	#game_mode = "Seafarers: 3-4 Player"
-	game_mode = "Seafarers: 5-6 Player"
+	game_mode = "Seafarers: 3-4 Player"
+	#game_mode = "Seafarers: 5-6 Player"
 
 	from tqdm import tqdm
 	dpi = 300
 
 	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
+	tiling.preprocessAllBevelInfo(bevel_attitude = bevel_attitude, bevel_size = bevel_size)
+	tiling.preprocessAllSunInfo(sun_angle = sun_angle, sun_attitude = sun_attitude)
 	tiling.render(dpi = dpi).save("pre.png")
 
 	for index in tqdm(range(2000)):
-		tiling.swapTiles(skew_power = 1, reject_flag = True)
+		tiling.swapTiles(skew_power = 2, reject_flag = True)
 
 	tiling.render(dpi = dpi).save("post.png")

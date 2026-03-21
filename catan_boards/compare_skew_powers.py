@@ -64,9 +64,8 @@ for skew_power in all_skew_powers:
 
 	# Run the simulations for this skew power
 	for sim_index in tqdm(range(n_simulations_per_power)):
-		# Create the tiling to use for this simulation but close the figures to save on memory
+		# Create the tiling to use for this simulation
 		current_tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
-		current_tiling.closeFigures()
 
 		# Randomly swap tiles for the needed number of simulation steps
 		for step_index in range(n_steps_per_simulation):
