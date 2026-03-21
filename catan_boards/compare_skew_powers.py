@@ -42,7 +42,7 @@ reject_flag = True
 
 # Number of simulations to run and number of swaps to run per simulation
 n_simulations_per_power = 100
-n_steps_per_simulation = 2000
+n_steps_per_simulation = 5000
 
 
 ######################################################################
@@ -90,7 +90,17 @@ import matplotlib.pyplot as plt
 plt.figure(figsize = (10, 8), layout = "constrained")
 for skew_power in all_skew_powers:
 	plt.plot(expected_mse_over_time_by_power[skew_power], label = "skew power = " + str(skew_power))
-plt.title("Expected MSE Over Time As A Function Of Skew Power (Many Steps)")
+plt.title("Expected MSE Over Time As A Function Of Skew Power (5000 Steps)")
+plt.xlabel("step index")
+plt.ylabel("expected MSE")
+plt.yscale("log")
+plt.grid()
+plt.legend()
+
+plt.figure(figsize = (10, 8), layout = "constrained")
+for skew_power in all_skew_powers:
+	plt.plot(expected_mse_over_time_by_power[skew_power][:2000], label = "skew power = " + str(skew_power))
+plt.title("Expected MSE Over Time As A Function Of Skew Power (2000 Steps)")
 plt.xlabel("step index")
 plt.ylabel("expected MSE")
 plt.yscale("log")
@@ -100,7 +110,7 @@ plt.legend()
 plt.figure(figsize = (10, 8), layout = "constrained")
 for skew_power in all_skew_powers:
 	plt.plot(expected_mse_over_time_by_power[skew_power][:100], label = "skew power = " + str(skew_power))
-plt.title("Expected MSE Over Time As A Function Of Skew Power (Few Steps)")
+plt.title("Expected MSE Over Time As A Function Of Skew Power (100 Steps)")
 plt.xlabel("step index")
 plt.ylabel("expected MSE")
 plt.yscale("log")
