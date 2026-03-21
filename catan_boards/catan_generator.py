@@ -37,10 +37,10 @@ from typing import Any
 seed = 2
 
 # Define the default bevel and sun information
-bevel_attitude = 25
-bevel_size = 0.1
-sun_angle = 120
-sun_attitude = 35
+CATAN_BEVEL_ATTITUDE = 25
+CATAN_BEVEL_SIZE = 0.1
+CATAN_SUN_ANGLE = 120
+CATAN_SUN_ATTITUDE = 35
 
 # Define the lists of keys shared between multiple dictionaries
 ALL_GAME_MODES = ["Original: 3-4 Player", "Original: 5-6 Player", "Seafarers: 3-4 Player", "Seafarers: 5-6 Player"]
@@ -628,8 +628,8 @@ if __name__ == "__main__":
 	dpi = 300
 
 	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
-	tiling.preprocessAllBevelInfo(bevel_attitude = bevel_attitude, bevel_size = bevel_size)
-	tiling.preprocessAllSunInfo(sun_angle = sun_angle, sun_attitude = sun_attitude)
+	tiling.preprocessAllBevelInfo(bevel_attitude = CATAN_BEVEL_ATTITUDE, bevel_size = CATAN_BEVEL_SIZE)
+	tiling.preprocessAllSunInfo(sun_angle = CATAN_SUN_ANGLE, sun_attitude = CATAN_SUN_ATTITUDE)
 	tiling.render(dpi = dpi).save("pre.png")
 
 	for index in tqdm(range(2000)):
