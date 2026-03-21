@@ -34,7 +34,7 @@ from typing import Any
 ### Define important shared settings for the game ###
 #####################################################
 # Define the random seed to use
-seed = 1
+seed = 4
 
 # Define the default bevel and sun information
 bevel_attitude = 25
@@ -541,7 +541,7 @@ class CatanGeneratorTiling:
 		# Return the results
 		return swap_results
 
-	### Define a function for rendering the tiling ###
+	### Define an external function for rendering the tiling ###
 	def render(self, dpi:int) -> Image.Image:
 		# Return a PIL image render of the tiling for the Catan board
 		# Assign the correct colors to each polygon
@@ -551,6 +551,11 @@ class CatanGeneratorTiling:
 
 		# Create the rendered image and return it
 		return self._board.render(dpi = dpi)
+
+	### Define an external function for closing figures to save on memory ###
+	def closeFigures(self):
+		# Close the figures associated with all polygons on the board
+		self._board.closeFigures()
 
 
 ############################################
@@ -620,7 +625,7 @@ if __name__ == "__main__":
 	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
 	tiling.render(dpi = dpi).save("pre.png")
 
-	for index in tqdm(range(1000)):
-		tiling.swapTiles(skew_power = 0.5, reject_flag = True)
+	for index in tqdm(range(2000)):
+		tiling.swapTiles(skew_power = 1, reject_flag = True)
 
 	tiling.render(dpi = dpi).save("post.png")
