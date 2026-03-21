@@ -33,9 +33,6 @@ from typing import Any
 #####################################################
 ### Define important shared settings for the game ###
 #####################################################
-# Define the random seed to use
-seed = 2
-
 # Define the default bevel and sun information
 CATAN_BEVEL_ATTITUDE = 25
 CATAN_BEVEL_SIZE = 0.1
@@ -625,6 +622,8 @@ if __name__ == "__main__":
 	#game_mode = "Seafarers: 5-6 Player"
 
 	from tqdm import tqdm
+
+	seed = 2
 	dpi = 300
 
 	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
