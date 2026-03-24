@@ -21,7 +21,7 @@ from color_helper import RGB
 from Polygon import HEXAGON_REGULAR_TALL
 from privacy_helper import privacyDecorator
 from tkinter_helper import createCanvas, createRectangle, createWindow
-from type_helper import isNumeric, tolerantlyCompare
+from type_helper import isListWithStringEntries, isNumeric, tolerantlyCompare
 
 # External modules
 from math import log2, sqrt
@@ -40,12 +40,97 @@ CATAN_SUN_ANGLE = 120
 CATAN_SUN_ATTITUDE = 35
 
 # Define the lists of keys shared between multiple dictionaries
-ALL_GAME_MODES = ["Original: 3-4 Player", "Original: 5-6 Player", "Seafarers: 3-4 Player", "Seafarers: 5-6 Player"]
+ALL_GAME_MODES = ["Original: 5 Wide", "Original: 6 Wide", "Seafarers: 6 Wide", "Seafarers: 7 Wide", "Seafarers: 8 Wide", "Seafarers: 9 Wide", "Seafarers: 10 Wide"]
 ALL_TILE_TYPES = ["brick", "sheep", "stone", "wheat", "wood", "desert", "gold", "water"]
+
+# Define a dictionary of tile count per row for each game mode
+ROW_COUNTS_PER_MODE = {
+	"Original: 5 Wide": [3, 4, 5, 4, 3],				# 19 total
+	"Original: 6 Wide": [3, 4, 5, 6, 5, 4, 3],			# 30 total
+	"Seafarers: 6 Wide": [4, 5, 6, 5, 6, 5, 4],			# 35 total
+	"Seafarers: 7 Wide": [5, 6, 7, 6, 7, 6, 5],			# 42 total
+	"Seafarers: 8 Wide": [6, 7, 8, 7, 8, 7, 6],			# 49 total
+	"Seafarers: 9 Wide": [7, 8, 9, 8, 9, 8, 7],			# 56 total
+	"Seafarers: 10 Wide": [8, 9, 10, 9, 10, 9, 8]		# 63 total
+}
+
+# Define a dictionary of tile count per type for each game mode
+TILE_COUNTS_PER_MODE = {
+	"Original: 5 Wide": {			# 19 total, 18 with numbers
+		"brick": 3,
+		"sheep": 4,
+		"stone": 3,
+		"wheat": 4,
+		"wood": 4,
+		"desert": 1,
+		"gold": 0,
+		"water": 0
+	},
+	"Original: 6 Wide": {			# 30 total, 28 with numbers
+		"brick": 5,
+		"sheep": 6,
+		"stone": 5,
+		"wheat": 6,
+		"wood": 6,
+		"desert": 2,
+		"gold": 0,
+		"water": 0
+	},
+	"Seafarers: 6 Wide": {			# 35 total, 24 with numbers
+		"brick": 4,
+		"sheep": 5,
+		"stone": 4,
+		"wheat": 4,
+		"wood": 5,
+		"desert": 1,
+		"gold": 2,
+		"water": 10
+	},
+	"Seafarers: 7 Wide": {			# 42 total, 25 with numbers
+		"brick": 4,
+		"sheep": 5,
+		"stone": 4,
+		"wheat": 5,
+		"wood": 5,
+		"desert": 1,
+		"gold": 2,
+		"water": 16
+	},
+	"Seafarers: 8 Wide": {			# 49 total, 27 with numbers
+		"brick": 5,
+		"sheep": 5,
+		"stone": 5,
+		"wheat": 5,
+		"wood": 5,
+		"desert": 2,
+		"gold": 2,
+		"water": 20
+	},
+	"Seafarers: 9 Wide": {			# 56 total, 30 with numbers
+		"brick": 5,
+		"sheep": 6,
+		"stone": 5,
+		"wheat": 6,
+		"wood": 6,
+		"desert": 2,
+		"gold": 2,
+		"water": 24
+	},
+	"Seafarers: 10 Wide": {			# 63 total, 33 with numbers
+		"brick": 6,
+		"sheep": 6,
+		"stone": 6,
+		"wheat": 6,
+		"wood": 6,
+		"desert": 3,
+		"gold": 3,
+		"water": 27
+	}
+}
 
 # Define a dictionary of number counts for each game mode
 NUMBER_COUNTS_PER_MODE = {
-	"Original: 3-4 Player": {		# 20 total
+	"Original: 5 Wide": {			# 20 total
 		2: 1,
 		3: 2,
 		4: 2,
@@ -57,7 +142,7 @@ NUMBER_COUNTS_PER_MODE = {
 		11: 2,
 		12: 1
 	},
-	"Original: 5-6 Player": {		# 28 total
+	"Original: 6 Wide": {			# 28 total
 		2: 2,
 		3: 3,
 		4: 3,
@@ -69,7 +154,19 @@ NUMBER_COUNTS_PER_MODE = {
 		11: 3,
 		12: 2
 	},
-	"Seafarers: 3-4 Player": {		# 28 total
+	"Seafarers: 6 Wide": {			# 26 total
+		2: 2,
+		3: 2,
+		4: 3,
+		5: 3,
+		6: 3,
+		8: 3,
+		9: 3,
+		10: 3,
+		11: 2,
+		12: 2
+	},
+	"Seafarers: 7 Wide": {			# 28 total
 		2: 2,
 		3: 3,
 		4: 3,
@@ -81,7 +178,19 @@ NUMBER_COUNTS_PER_MODE = {
 		11: 3,
 		12: 2
 	},
-	"Seafarers: 5-6 Player": {		# 32 total
+	"Seafarers: 8 Wide": {			# 28 total
+		2: 2,
+		3: 3,
+		4: 3,
+		5: 3,
+		6: 3,
+		8: 3,
+		9: 3,
+		10: 3,
+		11: 3,
+		12: 2
+	},
+	"Seafarers: 9 Wide": {			# 32 total
 		2: 2,
 		3: 3,
 		4: 4,
@@ -92,62 +201,34 @@ NUMBER_COUNTS_PER_MODE = {
 		10: 4,
 		11: 3,
 		12: 2
-	}
-}
-
-# Define a dictionary of tile count per row for each game mode
-ROW_COUNTS_PER_MODE = {
-	"Original: 3-4 Player": [3, 4, 5, 4, 3],
-	"Original: 5-6 Player": [3, 4, 5, 6, 5, 4, 3],
-	"Seafarers: 3-4 Player": [5, 6, 7, 6, 7, 6, 5],
-	"Seafarers: 5-6 Player": [7, 8, 9, 8, 9, 8, 7]
-}
-
-# Define a dictionary of tile count per type for each game mode
-TILE_COUNTS_PER_MODE = {
-	"Original: 3-4 Player": {		# 19 total, 18 with numbers
-		"brick": 3,
-		"sheep": 4,
-		"stone": 3,
-		"wheat": 4,
-		"wood": 4,
-		"desert": 1,
-		"gold": 0,
-		"water": 0
 	},
-	"Original: 5-6 Player": {		# 30 total, 28 with numbers
-		"brick": 5,
-		"sheep": 6,
-		"stone": 5,
-		"wheat": 6,
-		"wood": 6,
-		"desert": 2,
-		"gold": 0,
-		"water": 0
-	},
-	"Seafarers: 3-4 Player": {		# 42 total, 25 with numbers
-		"brick": 4,
-		"sheep": 5,
-		"stone": 4,
-		"wheat": 5,
-		"wood": 5,
-		"desert": 1,
-		"gold": 2,
-		"water": 16
-	},
-	"Seafarers: 5-6 Player": {		# 56 total, 30 with numbers
-		"brick": 5,
-		"sheep": 6,
-		"stone": 5,
-		"wheat": 6,
-		"wood": 6,
-		"desert": 2,
-		"gold": 2,
-		"water": 24
+	"Seafarers: 10 Wide": {			# 34 total
+		2: 2,
+		3: 3,
+		4: 4,
+		5: 4,
+		6: 4,
+		8: 4,
+		9: 4,
+		10: 4,
+		11: 3,
+		12: 2
 	}
 }
 
 # Define the target efficiency values for each tile
+#'''
+TARGET_EFFICIENCY_PER_TILE = {
+	"brick": 0.8,
+	"sheep": 0.8,
+	"stone": 0.8,
+	"wheat": 0.8,
+	"wood": 0.8,
+	"desert": 0.6,
+	"gold": 0.2,
+	"water": 0.8
+}
+'''
 TARGET_EFFICIENCY_PER_TILE = {
 	"brick": 0.95,
 	"sheep": 0.95,
@@ -158,6 +239,7 @@ TARGET_EFFICIENCY_PER_TILE = {
 	"gold": 0.95,
 	"water": 0.55
 }
+'''
 
 # Define the colors used for each tile
 COLOR_PER_TILE = {
@@ -202,7 +284,8 @@ catan_generator_tiling_decorator = privacyDecorator(["_adjacency_matrix",					# 
 													 "_neighbor_counts_per_tile",
 													 "_neighbor_indices_per_polygon",
 													 "_tiles_per_index",
-													 "_computeEntropyPerTileType",			# private functions
+													 "_initializeBoard",					# private functions
+													 "_initializeStorageFromTiling",
 													 "_initializeTiling"])
 
 # Define the class with private attributes
@@ -220,15 +303,12 @@ class CatanGeneratorTiling:
 		self._game_mode = game_mode
 
 		# Initialize a new tiling given the current game mode
-		self._initializeTiling(seed = seed)
+		self._initializeBoard()
+		self._initializeRandomTiling(seed = seed)
 
-	### Define a function for randomly initializing the tiling information ###
-	def _initializeTiling(self, seed:int):
-		# Perform all steps necessary for obtaining an initial tiling
-		# Set the random seed (if needed)
-		if seed is not None:
-			random.seed(seed = seed)
-
+	### Define internal functions for initializing freshly created tilings ###
+	def _initializeBoard(self):
+		# Initialize information related to the polygon layout and stored Board object
 		# Set the number of polygons based on the game mode
 		self._n_polygons = sum(ROW_COUNTS_PER_MODE[self._game_mode])
 
@@ -244,32 +324,6 @@ class CatanGeneratorTiling:
 				x_shift = sqrt(3) * (col_index - ROW_COUNTS_PER_MODE[self._game_mode][row_index] / 2)
 				x_shift_per_polygon.append(x_shift)
 				y_shift_per_polygon.append(y_shift)
-
-		# Create and store the Board object for the tiling
-		self._board = Board(n_polygons = self._n_polygons,
-			  				all_polygons = all_polygons,
-			  				x_shift_per_polygon = x_shift_per_polygon,
-			  				y_shift_per_polygon = y_shift_per_polygon)
-
-		# Randomly assigning an initial tile selection to each polygon
-		# Initialize the needed storage
-		self._tile_per_polygon = []
-		# Create the list of currently selectable tiles given the current game mode
-		possible_tiles = []
-		for tile_type in TILE_COUNTS_PER_MODE[self._game_mode]:
-			for _ in range(TILE_COUNTS_PER_MODE[self._game_mode][tile_type]):
-				possible_tiles.append(tile_type)
-		# Perform the tiling assignment to each polygon
-		for polygon_index in range(self._n_polygons):
-			# Select and tile and remove it from the list of possible tiles
-			tile_index = random.randint(len(possible_tiles))
-			selected_tile_type = possible_tiles.pop(tile_index)
-			# Assign this tile to this polygon
-			self._tile_per_polygon.append(selected_tile_type)
-
-		# Get the tile types which actually appear in this particular tiling, also compute the resulting maximum entropy
-		self._needed_tile_types = [tile_type for tile_type in ALL_TILE_TYPES if tile_type in self._tile_per_polygon]
-		self._maximum_entropy = log2(len(self._needed_tile_types))
 
 		# Determine the indices adjacent to each polygon on the board
 		# Initialize the needed storage
@@ -295,6 +349,43 @@ class CatanGeneratorTiling:
 					self._neighbor_indices_per_polygon[polygon_index_1].append(polygon_index_2)
 					self._neighbor_indices_per_polygon[polygon_index_2].append(polygon_index_1)
 
+		# Create and store the Board object for the tiling
+		self._board = Board(n_polygons = self._n_polygons,
+			  				all_polygons = all_polygons,
+			  				x_shift_per_polygon = x_shift_per_polygon,
+			  				y_shift_per_polygon = y_shift_per_polygon)
+
+	def _initializeRandomTiling(self, seed:int):
+		# Perform all steps necessary for obtaining an initial tiling
+		# Set the random seed (if needed)
+		if seed is not None:
+			random.seed(seed = seed)
+
+		# Randomly assigning an initial tile selection to each polygon
+		# Initialize the needed storage
+		self._tile_per_polygon = []
+		# Create the list of currently selectable tiles given the current game mode
+		possible_tiles = []
+		for tile_type in TILE_COUNTS_PER_MODE[self._game_mode]:
+			for _ in range(TILE_COUNTS_PER_MODE[self._game_mode][tile_type]):
+				possible_tiles.append(tile_type)
+		# Perform the tiling assignment to each polygon
+		for polygon_index in range(self._n_polygons):
+			# Select and tile and remove it from the list of possible tiles
+			tile_index = random.randint(len(possible_tiles))
+			selected_tile_type = possible_tiles.pop(tile_index)
+			# Assign this tile to this polygon
+			self._tile_per_polygon.append(selected_tile_type)
+
+		# Initialize the other storage variables given this new random tiling
+		self._initializeStorageFromTiling()
+
+	def _initializeStorageFromTiling(self):
+		# Compute the tiling related storage variables which might be shared by providing a specific tiling or randomly generating one
+		# Get the tile types which actually appear in this particular tiling, also compute the resulting maximum entropy
+		self._needed_tile_types = [tile_type for tile_type in ALL_TILE_TYPES if tile_type in self._tile_per_polygon]
+		self._maximum_entropy = log2(len(self._needed_tile_types))
+
 		# Count the number of neighbors of each tile type belonging to each type of tile
 		# Initialize the dictionary
 		self._neighbor_counts_per_tile = {}
@@ -308,6 +399,21 @@ class CatanGeneratorTiling:
 			for polygon_index_2 in self._neighbor_indices_per_polygon[polygon_index_1]:
 				tile_type_2 = self._tile_per_polygon[polygon_index_2]
 				self._neighbor_counts_per_tile[tile_type_1][tile_type_2] += 1
+
+	### Define an external function for overwriting the tiling with specific values ###
+	def overwriteTiling(self, tile_per_polygon:list):
+		# Overwrite the randomly generated tiling (i.e. the primary use case) with a specified one (i.e. the secondary use case)
+		# Verify the inputs
+		assert isListWithStringEntries(tile_per_polygon, allow_empty_flag = False) == True, "CatanGeneratorTiling::overwriteTiling: Provided value for 'tile_per_polygon' must be a list object containing non-empty str objects as entries"
+		assert len(tile_per_polygon) == self._n_polygons, "CatanGeneratorTiling::overwriteTiling: Provided value for 'tile_per_polygon' must be a list of length equal to the stored number of polygons (in this case " + str(self._n_polygons) + ")"
+		for value in tile_per_polygon:
+			assert value in ALL_TILE_TYPES, "CatanGeneratorTiling::overwriteTiling: Provided value for 'tile_per_polygon' must be a list of valid tile types"
+
+		# Update the tile for each polygon
+		self._tile_per_polygon = tile_per_polygon
+
+		# Initialize the other storage variables given this new specified tiling
+		self._initializeStorageFromTiling()
 
 	### Define external functions for preprocessing bevel and sun information for all polygons ###
 	def preprocessAllBevelInfo(self, bevel_attitude:Any, bevel_size:Any):
@@ -323,8 +429,8 @@ class CatanGeneratorTiling:
 		# Close the figures associated with all polygons on the stored board
 		self._board.closeFigures()
 
-	### Define functions related to computing the Shannon entropy of neighbor distributions for each tile type ###
-	def _computeEntropyPerTileType(self) -> dict:
+	### Define an external function for computing the Shannon entropy of neighbor distributions for each tile type ###
+	def computeEntropyPerTileType(self) -> dict:
 		# Compute the Shannon entropy of the probability distributions over possible neighbors for each tile type
 		# Initialize all the storage dictionaries needed for this function
 		# Create the main dictionaries
@@ -353,53 +459,7 @@ class CatanGeneratorTiling:
 		# Return the results
 		return entropy_by_tile
 
-	def _updateStorageDueToSwap(self, polygon_index_1:int, polygon_index_2:int):
-		# Update the polygon tile type list and neighbor counts dictionary to reflect a swap occurring (note: input verification not done for efficiency)
-		# Get the current tile types associated with these polygons
-		tile_type_1 = self._tile_per_polygon[polygon_index_1]
-		tile_type_2 = self._tile_per_polygon[polygon_index_2]
-
-		# Lower the neighbor counts for type 1 before changing the 1st polygon
-		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_1]:
-			# Get the tile type for the neighbor
-			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
-
-			# Unlink the neighbor type from type 1
-			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] -= 1
-			self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] -= 1
-
-		# Lower the neighbor counts for type 2 before changing the 2nd polygon
-		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_2]:
-			# Get the tile type for the neighbor
-			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
-
-			# Unlink the neighbor type from type 2
-			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] -= 1
-			self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] -= 1
-
-		# Swap the types for the selected polygons
-		self._tile_per_polygon[polygon_index_1] = tile_type_2
-		self._tile_per_polygon[polygon_index_2] = tile_type_1
-
-		# Raise the neighbor counts for type 2 after changing the 1st polygon
-		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_1]:
-			# Get the tile type for the neighbor
-			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
-
-			# Link the neighbor type to type 2
-			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] += 1
-			self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] += 1
-
-		# Raise the neighbor counts for type 1 after changing the 2nd polygon
-		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_2]:
-			# Get the tile type for the neighbor
-			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
-
-			# Link the neighbor type to type 1
-			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] += 1
-			self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] += 1
-
-	### Define a function for swapping two tiles in an attempt to improve the tiling ###
+	### Define functions for swapping two tiles in an attempt to improve the MSE between actual and target efficiency values ###
 	def swapTiles(self, skew_power:Any = 1, reject_flag:bool = False) -> dict:
 		# Swap two tiles in an attempt to improve relevant entropy values, return a dictionary of relevant results
 		# Verify the inputs
@@ -427,7 +487,7 @@ class CatanGeneratorTiling:
 
 		# Compute the pre-swap entropy and efficiency (i.e. normalized entropy) values and add to the results dictionary
 		# Get the needed entropy values for each distribution
-		pre_entropy_by_tile = self._computeEntropyPerTileType()
+		pre_entropy_by_tile = self.computeEntropyPerTileType()
 		# Convert to the efficiency values
 		pre_efficiency_by_tile = {}
 		for tile_type in self._needed_tile_types:
@@ -515,7 +575,7 @@ class CatanGeneratorTiling:
 
 		# Compute the post-swap entropy and efficiency (i.e. normalized entropy) values and add to the results dictionary
 		# Get the needed entropy values for each distribution
-		post_entropy_by_tile = self._computeEntropyPerTileType()
+		post_entropy_by_tile = self.computeEntropyPerTileType()
 		# Convert to the efficiency values
 		post_efficiency_by_tile = {}
 		for tile_type in self._needed_tile_types:
@@ -547,6 +607,52 @@ class CatanGeneratorTiling:
 
 		# Return the results
 		return swap_results
+
+	def _updateStorageDueToSwap(self, polygon_index_1:int, polygon_index_2:int):
+		# Update the polygon tile type list and neighbor counts dictionary to reflect a swap occurring (note: input verification not done for efficiency)
+		# Get the current tile types associated with these polygons
+		tile_type_1 = self._tile_per_polygon[polygon_index_1]
+		tile_type_2 = self._tile_per_polygon[polygon_index_2]
+
+		# Lower the neighbor counts for type 1 before changing the 1st polygon
+		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_1]:
+			# Get the tile type for the neighbor
+			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+
+			# Unlink the neighbor type from type 1
+			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] -= 1
+			self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] -= 1
+
+		# Lower the neighbor counts for type 2 before changing the 2nd polygon
+		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_2]:
+			# Get the tile type for the neighbor
+			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+
+			# Unlink the neighbor type from type 2
+			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] -= 1
+			self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] -= 1
+
+		# Swap the types for the selected polygons
+		self._tile_per_polygon[polygon_index_1] = tile_type_2
+		self._tile_per_polygon[polygon_index_2] = tile_type_1
+
+		# Raise the neighbor counts for type 2 after changing the 1st polygon
+		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_1]:
+			# Get the tile type for the neighbor
+			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+
+			# Link the neighbor type to type 2
+			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_2] += 1
+			self._neighbor_counts_per_tile[tile_type_2][neighbor_tile_type] += 1
+
+		# Raise the neighbor counts for type 1 after changing the 2nd polygon
+		for neighbor_polygon_index in self._neighbor_indices_per_polygon[polygon_index_2]:
+			# Get the tile type for the neighbor
+			neighbor_tile_type = self._tile_per_polygon[neighbor_polygon_index]
+
+			# Link the neighbor type to type 1
+			self._neighbor_counts_per_tile[neighbor_tile_type][tile_type_1] += 1
+			self._neighbor_counts_per_tile[tile_type_1][neighbor_tile_type] += 1
 
 	### Define an external function for rendering the tiling ###
 	def render(self, dpi:int) -> Image.Image:
@@ -616,14 +722,17 @@ class CatanGeneratorGUI:
 						fill_color = self._BACKGROUND_COLOR_LIGHT)
 
 if __name__ == "__main__":
-	#game_mode = "Original: 3-4 Player"
-	#game_mode = "Original: 5-6 Player"
-	game_mode = "Seafarers: 3-4 Player"
-	#game_mode = "Seafarers: 5-6 Player"
+	#game_mode = "Original: 5 Wide"
+	#game_mode = "Original: 6 Wide"
+	#game_mode = "Seafarers: 6 Wide"
+	#game_mode = "Seafarers: 7 Wide"
+	#game_mode = "Seafarers: 8 Wide"
+	game_mode = "Seafarers: 9 Wide"
+	#game_mode = "Seafarers: 10 Wide"
 
 	from tqdm import tqdm
 
-	seed = 2
+	seed = 12
 	dpi = 300
 
 	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
@@ -631,7 +740,8 @@ if __name__ == "__main__":
 	tiling.preprocessAllSunInfo(sun_angle = CATAN_SUN_ANGLE, sun_attitude = CATAN_SUN_ATTITUDE)
 	tiling.render(dpi = dpi).save("pre.png")
 
-	for index in tqdm(range(2000)):
-		tiling.swapTiles(skew_power = 2, reject_flag = True)
+	for index in tqdm(range(3000)):
+		tiling.swapTiles(skew_power = 0.5, reject_flag = True)
 
+	tiling.render(dpi = dpi).show()
 	tiling.render(dpi = dpi).save("post.png")

@@ -16,14 +16,12 @@ path.insert(0, str(infrastructure_folder.joinpath("board_games")))
 path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 
 # Internal modules
-from catan_generator import ALL_TILE_TYPES, CatanGeneratorTiling
-from color_helper import ALL_PLOTLY_COLOR_SCALES_BY_TYPE, customSpectrum
-from sqlite3_helper import addTable, appendRow, ConnectionManager, getRowCount, readColumn, readEntry
+from catan_generator import CatanGeneratorTiling
 from tkinter_helper import askSaveFilename
 
 # External modules
-from numpy import quantile, zeros
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+from numpy import zeros
 from tqdm import tqdm
 
 
@@ -85,11 +83,13 @@ for skew_power in all_skew_powers:
 ##########################################################
 ### Create a plot comparing the expected MSE over time ###
 ##########################################################
-import matplotlib.pyplot as plt
-
+# Create a plot for 5000 steps
+# Create the figure
 plt.figure(figsize = (10, 8), layout = "constrained")
+# Add the needed traces
 for skew_power in all_skew_powers:
 	plt.plot(expected_mse_over_time_by_power[skew_power], label = "skew power = " + str(skew_power))
+# Format the figure
 plt.title("Expected MSE Over Time As A Function Of Skew Power (5000 Steps)")
 plt.xlabel("step index")
 plt.ylabel("expected MSE")
@@ -97,9 +97,13 @@ plt.yscale("log")
 plt.grid()
 plt.legend()
 
+# Create a plot for 2000 steps
+# Create the figure
 plt.figure(figsize = (10, 8), layout = "constrained")
+# Add the needed traces
 for skew_power in all_skew_powers:
 	plt.plot(expected_mse_over_time_by_power[skew_power][:2000], label = "skew power = " + str(skew_power))
+# Format the figure
 plt.title("Expected MSE Over Time As A Function Of Skew Power (2000 Steps)")
 plt.xlabel("step index")
 plt.ylabel("expected MSE")
@@ -107,9 +111,13 @@ plt.yscale("log")
 plt.grid()
 plt.legend()
 
+# Create a plot for 100 steps
+# Create the figure
 plt.figure(figsize = (10, 8), layout = "constrained")
+# Add the needed traces
 for skew_power in all_skew_powers:
 	plt.plot(expected_mse_over_time_by_power[skew_power][:100], label = "skew power = " + str(skew_power))
+# Format the figure
 plt.title("Expected MSE Over Time As A Function Of Skew Power (100 Steps)")
 plt.xlabel("step index")
 plt.ylabel("expected MSE")
@@ -117,4 +125,5 @@ plt.yscale("log")
 plt.grid()
 plt.legend()
 
+# Show all three figures
 plt.show()
