@@ -216,30 +216,69 @@ NUMBER_COUNTS_PER_MODE = {
 	}
 }
 
-# Define the target efficiency values for each tile
-#'''
-TARGET_EFFICIENCY_PER_TILE = {
-	"brick": 0.8,
-	"sheep": 0.8,
-	"stone": 0.8,
-	"wheat": 0.8,
-	"wood": 0.8,
-	"desert": 0.6,
-	"gold": 0.2,
-	"water": 0.8
-}
-'''
-TARGET_EFFICIENCY_PER_TILE = {
-	"brick": 0.95,
-	"sheep": 0.95,
-	"stone": 0.95,
-	"wheat": 0.95,
-	"wood": 0.95,
-	"desert": 0.95,
-	"gold": 0.95,
-	"water": 0.55
-}
-'''
+# Define the target efficiency values for each game mode and tile type
+# Initialize the dictionary
+TARGET_EFFICIENCY_PER_TUPLE = {}
+# Add information for brick
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 5 Wide", "brick")] = 0.9
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 6 Wide", "brick")] = 0.9
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 6 Wide", "brick")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 7 Wide", "brick")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 8 Wide", "brick")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 9 Wide", "brick")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 10 Wide", "brick")] = 0.85
+# Add information for sheep
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 5 Wide", "sheep")] = 0.9
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 6 Wide", "sheep")] = 0.9
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 6 Wide", "sheep")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 7 Wide", "sheep")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 8 Wide", "sheep")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 9 Wide", "sheep")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 10 Wide", "sheep")] = 0.85
+# Add information for stone
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 5 Wide", "stone")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 6 Wide", "stone")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 6 Wide", "stone")] = 0.8
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 7 Wide", "stone")] = 0.8
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 8 Wide", "stone")] = 0.8
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 9 Wide", "stone")] = 0.8
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 10 Wide", "stone")] = 0.8
+# Add information for wheat
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 5 Wide", "wheat")] = 0.9
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 6 Wide", "wheat")] = 0.9
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 6 Wide", "wheat")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 7 Wide", "wheat")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 8 Wide", "wheat")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 9 Wide", "wheat")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 10 Wide", "wheat")] = 0.85
+# Add information for wood
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 5 Wide", "wood")] = 0.9
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 6 Wide", "wood")] = 0.9
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 6 Wide", "wood")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 7 Wide", "wood")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 8 Wide", "wood")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 9 Wide", "wood")] = 0.85
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 10 Wide", "wood")] = 0.85
+# Add information for desert
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 5 Wide", "desert")] = 0.8
+TARGET_EFFICIENCY_PER_TUPLE[("Original: 6 Wide", "desert")] = 0.8
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 6 Wide", "desert")] = 0.5
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 7 Wide", "desert")] = 0.5
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 8 Wide", "desert")] = 0.5
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 9 Wide", "desert")] = 0.5
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 10 Wide", "desert")] = 0.5
+# Add information for gold
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 6 Wide", "gold")] = 0.4
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 7 Wide", "gold")] = 0.4
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 8 Wide", "gold")] = 0.4
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 9 Wide", "gold")] = 0.3
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 10 Wide", "gold")] = 0.3
+# Add information for water
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 6 Wide", "water")] = 0.4
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 7 Wide", "water")] = 0.6
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 8 Wide", "water")] = 0.6
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 9 Wide", "water")] = 0.6
+TARGET_EFFICIENCY_PER_TUPLE[("Seafarers: 10 Wide", "water")] = 0.6
 
 # Define the colors used for each tile
 COLOR_PER_TILE = {
@@ -499,7 +538,7 @@ class CatanGeneratorTiling:
 		# Compute the differences between actual and target efficiencies as the raw error values
 		raw_error_by_tile = {}
 		for tile_type in self._needed_tile_types:
-			raw_error_by_tile[tile_type] = pre_efficiency_by_tile[tile_type] - TARGET_EFFICIENCY_PER_TILE[tile_type]
+			raw_error_by_tile[tile_type] = pre_efficiency_by_tile[tile_type] - TARGET_EFFICIENCY_PER_TUPLE[(self._game_mode, tile_type)]
 
 		# Normalize these errors to be between 0 and 1 (i.e. 1 is for the most above, -1 is for the most below, 0.5 is exactly correct)
 		# Fetch the largest magnitude raw error
@@ -590,8 +629,8 @@ class CatanGeneratorTiling:
 		post_mean_squared_error = 0
 		denominator = len(self._needed_tile_types)
 		for tile_type in self._needed_tile_types:
-			pre_mean_squared_error += (TARGET_EFFICIENCY_PER_TILE[tile_type] - pre_efficiency_by_tile[tile_type])**2 / denominator
-			post_mean_squared_error += (TARGET_EFFICIENCY_PER_TILE[tile_type] - post_efficiency_by_tile[tile_type])**2 / denominator
+			pre_mean_squared_error += (TARGET_EFFICIENCY_PER_TUPLE[(self._game_mode, tile_type)] - pre_efficiency_by_tile[tile_type])**2 / denominator
+			post_mean_squared_error += (TARGET_EFFICIENCY_PER_TUPLE[(self._game_mode, tile_type)] - post_efficiency_by_tile[tile_type])**2 / denominator
 		# Add these results to the dictionary
 		swap_results["pre_mean_squared_error"] = pre_mean_squared_error
 		swap_results["post_mean_squared_error"] = post_mean_squared_error
@@ -725,14 +764,14 @@ if __name__ == "__main__":
 	#game_mode = "Original: 5 Wide"
 	#game_mode = "Original: 6 Wide"
 	#game_mode = "Seafarers: 6 Wide"
-	#game_mode = "Seafarers: 7 Wide"
+	game_mode = "Seafarers: 7 Wide"
 	#game_mode = "Seafarers: 8 Wide"
-	game_mode = "Seafarers: 9 Wide"
+	#game_mode = "Seafarers: 9 Wide"
 	#game_mode = "Seafarers: 10 Wide"
 
 	from tqdm import tqdm
 
-	seed = 12
+	seed = 1
 	dpi = 300
 
 	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
@@ -740,8 +779,8 @@ if __name__ == "__main__":
 	tiling.preprocessAllSunInfo(sun_angle = CATAN_SUN_ANGLE, sun_attitude = CATAN_SUN_ATTITUDE)
 	tiling.render(dpi = dpi).save("pre.png")
 
-	for index in tqdm(range(3000)):
-		tiling.swapTiles(skew_power = 0.5, reject_flag = True)
+	for index in tqdm(range(4000)):
+		tiling.swapTiles(skew_power = 2, reject_flag = True)
 
 	tiling.render(dpi = dpi).show()
 	tiling.render(dpi = dpi).save("post.png")
