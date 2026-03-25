@@ -764,14 +764,14 @@ if __name__ == "__main__":
 	#game_mode = "Original: 5 Wide"
 	#game_mode = "Original: 6 Wide"
 	#game_mode = "Seafarers: 6 Wide"
-	game_mode = "Seafarers: 7 Wide"
-	#game_mode = "Seafarers: 8 Wide"
+	#game_mode = "Seafarers: 7 Wide"
+	game_mode = "Seafarers: 8 Wide"
 	#game_mode = "Seafarers: 9 Wide"
 	#game_mode = "Seafarers: 10 Wide"
 
 	from tqdm import tqdm
 
-	seed = 1
+	seed = 25
 	dpi = 300
 
 	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
@@ -779,8 +779,8 @@ if __name__ == "__main__":
 	tiling.preprocessAllSunInfo(sun_angle = CATAN_SUN_ANGLE, sun_attitude = CATAN_SUN_ATTITUDE)
 	tiling.render(dpi = dpi).save("pre.png")
 
-	for index in tqdm(range(4000)):
-		tiling.swapTiles(skew_power = 2, reject_flag = True)
+	for index in tqdm(range(3000)):
+		tiling.swapTiles(skew_power = 1, reject_flag = True)
 
 	tiling.render(dpi = dpi).show()
 	tiling.render(dpi = dpi).save("post.png")
