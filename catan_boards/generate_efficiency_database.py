@@ -34,7 +34,7 @@ from tqdm import tqdm
 seed = 0
 
 # Game mode to use
-game_mode = "Seafarers: 5-6 Player"
+game_mode = "Seafarers: 8 Wide"
 
 # Swap settings
 skew_power = 0
