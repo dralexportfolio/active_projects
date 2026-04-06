@@ -14,11 +14,13 @@ infrastructure_folder = parent_folder.joinpath("infrastructure")
 # Add the needed paths
 path.insert(0, str(infrastructure_folder.joinpath("dimensional_analysis")))
 
+# Built-in modules
+from math import sqrt
+
 # Internal modules
 from persistent_dimension import estimatePointwiseDimension, generateDimensionDatabase, plotDimensionEstimateOfPoint, plotDimensionEstimateOfSet
 
 # External modules
-from math import sqrt
 from numpy import random
 
 

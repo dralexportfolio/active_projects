@@ -15,6 +15,9 @@ infrastructure_folder = parent_folder.joinpath("infrastructure")
 path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 path.insert(0, str(infrastructure_folder.joinpath("dimensional_analysis")))
 
+# Built-in modules
+from time import time
+
 # Internal modules
 from persistent_dimension import estimatePointwiseDimension, generateDimensionDatabase, plotDimensionEstimateOfSet
 from sqlite3_helper import ConnectionManager, getColumnNames, getColumnTypes, getExistingTables, getRowCount, readRow
@@ -22,7 +25,6 @@ from tkinter_helper import askOpenFilename
 
 # External modules
 from numpy import array
-from time import time
 from tqdm import tqdm
 
 

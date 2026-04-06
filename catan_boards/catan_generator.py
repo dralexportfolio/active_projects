@@ -15,6 +15,10 @@ infrastructure_folder = parent_folder.joinpath("infrastructure")
 path.insert(0, str(infrastructure_folder.joinpath("board_games")))
 path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 
+# Built-in modules
+from math import log2, sqrt
+from typing import Any
+
 # Internal modules
 from Board import Board
 from color_helper import RGB
@@ -24,10 +28,9 @@ from tkinter_helper import createCanvas, createRectangle, createWindow
 from type_helper import isListWithStringEntries, isNumeric, tolerantlyCompare
 
 # External modules
-from math import log2, sqrt
 from numpy import random
 from PIL import Image
-from typing import Any
+
 
 
 #####################################################
@@ -765,13 +768,13 @@ if __name__ == "__main__":
 	#game_mode = "Original: 6 Wide"
 	#game_mode = "Seafarers: 6 Wide"
 	#game_mode = "Seafarers: 7 Wide"
-	game_mode = "Seafarers: 8 Wide"
+	#game_mode = "Seafarers: 8 Wide"
 	#game_mode = "Seafarers: 9 Wide"
-	#game_mode = "Seafarers: 10 Wide"
+	game_mode = "Seafarers: 10 Wide"
 
 	from tqdm import tqdm
 
-	seed = 25
+	seed = 24
 	dpi = 300
 
 	tiling = CatanGeneratorTiling(game_mode = game_mode, seed = seed)
@@ -779,8 +782,8 @@ if __name__ == "__main__":
 	tiling.preprocessAllSunInfo(sun_angle = CATAN_SUN_ANGLE, sun_attitude = CATAN_SUN_ATTITUDE)
 	tiling.render(dpi = dpi).save("pre.png")
 
-	for index in tqdm(range(3000)):
-		tiling.swapTiles(skew_power = 1, reject_flag = True)
+	for index in tqdm(range(8000)):
+		tiling.swapTiles(skew_power = 0.5, reject_flag = True)
 
-	tiling.render(dpi = dpi).show()
+	#tiling.render(dpi = dpi).show()
 	tiling.render(dpi = dpi).save("post.png")

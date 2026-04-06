@@ -15,6 +15,9 @@ infrastructure_folder = parent_folder.joinpath("infrastructure")
 path.insert(0, str(infrastructure_folder.joinpath("board_games")))
 path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 
+# Built-in modules
+from math import sqrt
+
 # Internal modules
 from catan_generator import ALL_TILE_TYPES, CatanGeneratorTiling
 from color_helper import ALL_PLOTLY_COLOR_SCALES_BY_TYPE, customSpectrum
@@ -22,7 +25,7 @@ from sqlite3_helper import addTable, appendRow, ConnectionManager, getRowCount, 
 from tkinter_helper import askSaveFilename
 
 # External modules
-from numpy import quantile
+from numpy import corrcoef, quantile
 import plotly.graph_objects as go
 from tqdm import tqdm
 
@@ -104,6 +107,39 @@ for sim_index in tqdm(range(n_simulations)):
 # Commit changes to db file now that the simulations are done
 connection_manager.commit()
 
+##########################################################
+### Read important shared information from the db file ###
+##########################################################
+# Get the total number of rows from the db file
+n_rows = getRowCount(connection_manager = connection_manager, table_name = table_name)
+
+# Read the change in MSE column from the db file
+delta_column = readColumn(connection_manager = connection_manager, table_name = table_name, column_name = "delta_mean_squared_error")
+
+
+################################################################################################
+### Compute the correlation coefficient between distance from the diagonal and change in MSE ###
+################################################################################################
+# Initialize the list of distances the two efficiency values are from being equal
+distances_from_equal = []
+
+# Loop over the rows in the db file and compute the distances
+for row_index in tqdm(range(n_rows)):
+	# Get the two tile types associated with this swap
+	tile_type_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_1", row_index = row_index)
+	tile_type_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_2", row_index = row_index)
+
+	# Get the needed pre-swap efficiency values associated with these tile types
+	efficiency_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_1 + "_pre_efficiency", row_index = row_index)
+	efficiency_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_2 + "_pre_efficiency", row_index = row_index)
+
+	# Store the distance this efficiency pair is from the diagonal line through the space
+	distances_from_equal.append(abs(efficiency_1 - efficiency_2) / sqrt(2))
+
+# Print the correlation coefficient between these two columns
+print("Correlation Coefficient Between Diagonal Distance And Change In MSE ---> " + str(float(corrcoef(distances_from_equal, delta_column)[0, 1])))
+quit()
+
 
 #########################################################
 ### Analyze the simulations and create relevant plots ###
@@ -113,18 +149,14 @@ delta_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
 efficiency_1_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
 efficiency_2_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
 
-# Compute the maximum magnitude delta value in the db file
-delta_column = readColumn(connection_manager = connection_manager, table_name = table_name, column_name = "delta_mean_squared_error")
-max_abs_delta = max(abs(max(delta_column)), abs(min(delta_column)))
-
 # Get the quantile information from the delta column
 quantile_values = quantile(a = delta_column, q = [0, 0.25, 0.5, 0.75, 1])
 
-# Get the total number of rows from the db file
-n_rows = getRowCount(connection_manager = connection_manager, table_name = table_name)
+# Compute the maximum magnitude delta MSE value from the db file
+max_abs_delta = max(abs(max(delta_column)), abs(min(delta_column)))
 
 # Read the needed information from the table
-for row_index in range(n_rows):
+for row_index in tqdm(range(n_rows)):
 	# Get the change in mean squared error associated with this swap
 	delta_mean_squared_error = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "delta_mean_squared_error", row_index = row_index)
 
