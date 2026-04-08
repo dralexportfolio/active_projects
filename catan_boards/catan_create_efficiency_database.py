@@ -19,7 +19,7 @@ path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 from math import sqrt
 
 # Internal modules
-from catan_generator import ALL_TILE_TYPES, CatanGeneratorTiling
+from catan_board_generator import ALL_TILE_TYPES, CatanGeneratorTiling
 from color_helper import ALL_PLOTLY_COLOR_SCALES_BY_TYPE, customSpectrum
 from sqlite3_helper import addTable, appendRow, ConnectionManager, getRowCount, readColumn, readEntry
 from tkinter_helper import askSaveFilename
@@ -41,7 +41,7 @@ game_mode = "Seafarers: 8 Wide"
 
 # Swap settings
 skew_power = 0
-reject_flag = False
+reject_flag = True
 
 # Number of simulations to run and number of swaps to run per simulation
 n_simulations = 20
@@ -67,6 +67,9 @@ column_types = ["BIGINT", "BIGINT", "TEXT", "TEXT", "FLOAT", "FLOAT", "FLOAT"]
 for tile_type in ALL_TILE_TYPES:
 	column_names.append(tile_type + "_pre_efficiency")
 	column_types.append("FLOAT")
+for tile_type in ALL_TILE_TYPES:
+	column_names.append(tile_type + "_normalized_error")
+	column_types.append("FLOAT")
 
 # Create the needed table in the db file
 addTable(connection_manager = connection_manager, table_name = table_name, column_names = column_names, column_types = column_types)
@@ -90,6 +93,7 @@ for sim_index in tqdm(range(n_simulations)):
 		pre_mean_squared_error = swap_results["pre_mean_squared_error"]
 		post_mean_squared_error = swap_results["post_mean_squared_error"]
 		pre_efficiency_by_tile = swap_results["pre_efficiency_by_tile"]
+		normalized_error_by_tile = swap_results["normalized_error_by_tile"]
 
 		# Write the needed information to the db file
 		# Get the row index for the new row
@@ -98,6 +102,9 @@ for sim_index in tqdm(range(n_simulations)):
 		new_row = [sim_index, step_index, tile_type_1, tile_type_2, pre_mean_squared_error, post_mean_squared_error, post_mean_squared_error - pre_mean_squared_error]
 		for tile_type in ALL_TILE_TYPES:
 			new_row.append(pre_efficiency_by_tile[tile_type])
+		for tile_type in ALL_TILE_TYPES:
+			new_row.append(normalized_error_by_tile[tile_type])
+		# Add the row to the db file
 		appendRow(connection_manager = connection_manager, table_name = table_name, new_row = new_row)
 
 	# Iterate the random seed (if needed)
@@ -129,16 +136,15 @@ for row_index in tqdm(range(n_rows)):
 	tile_type_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_1", row_index = row_index)
 	tile_type_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_2", row_index = row_index)
 
-	# Get the needed pre-swap efficiency values associated with these tile types
-	efficiency_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_1 + "_pre_efficiency", row_index = row_index)
-	efficiency_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_2 + "_pre_efficiency", row_index = row_index)
+	# Get the needed normalized error values associated with these tile types
+	normalized_error_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_1 + "_normalized_error", row_index = row_index)
+	normalized_error_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_2 + "_normalized_error", row_index = row_index)
 
-	# Store the distance this efficiency pair is from the diagonal line through the space
-	distances_from_equal.append(abs(efficiency_1 - efficiency_2) / sqrt(2))
+	# Store the distance this normalized error pair is from the diagonal line through the space
+	distances_from_equal.append(abs(normalized_error_1 - normalized_error_2) / sqrt(2))
 
 # Print the correlation coefficient between these two columns
 print("Correlation Coefficient Between Diagonal Distance And Change In MSE ---> " + str(float(corrcoef(distances_from_equal, delta_column)[0, 1])))
-quit()
 
 
 #########################################################
@@ -146,8 +152,8 @@ quit()
 #########################################################
 # Initialize the needed storage
 delta_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
-efficiency_1_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
-efficiency_2_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
+normalized_error_1_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
+normalized_error_2_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
 
 # Get the quantile information from the delta column
 quantile_values = quantile(a = delta_column, q = [0, 0.25, 0.5, 0.75, 1])
@@ -176,14 +182,14 @@ for row_index in tqdm(range(n_rows)):
 		tile_type_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_1", row_index = row_index)
 		tile_type_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_2", row_index = row_index)
 
-		# Get the associated efficient values for these tile types
-		efficiency_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_1 + "_pre_efficiency", row_index = row_index)
-		efficiency_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_2 + "_pre_efficiency", row_index = row_index)
+		# Get the associated normalized error values for these tile types
+		normalized_error_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_1 + "_normalized_error", row_index = row_index)
+		normalized_error_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_2 + "_normalized_error", row_index = row_index)
 
 		# Append to the needed lists
 		delta_values_by_quantile[quantile_index].append(delta_mean_squared_error)
-		efficiency_1_values_by_quantile[quantile_index].append(efficiency_1)
-		efficiency_2_values_by_quantile[quantile_index].append(efficiency_2)
+		normalized_error_1_values_by_quantile[quantile_index].append(normalized_error_1)
+		normalized_error_2_values_by_quantile[quantile_index].append(normalized_error_2)
 
 # Close the connection manager
 connection_manager.close()
@@ -214,12 +220,12 @@ for quantile_index in range(4):
 	fig = go.Figure()
 
 	# Add the needed traces
-	fig.add_trace(go.Scatter(x = efficiency_1_values_by_quantile[quantile_index],
-							 y = efficiency_2_values_by_quantile[quantile_index],
+	fig.add_trace(go.Scatter(x = normalized_error_1_values_by_quantile[quantile_index],
+							 y = normalized_error_2_values_by_quantile[quantile_index],
 							 showlegend = False,
 							 customdata = delta_values_by_quantile[quantile_index],
-							 hovertemplate = ("<b>Pre-Swap Efficiency 1:</b> %{x}<br>"
-											  "<b>Pre-Swap Efficiency 2:</b> %{y}<br>"
+							 hovertemplate = ("<b>Normalized Error 1:</b> %{x}<br>"
+											  "<b>Normalized Error 2:</b> %{y}<br>"
 											  "<b>Delta Mean Squared Error:</b> %{customdata}<br>"
 											  "<extra></extra>"),
 							 mode = "markers",
@@ -230,10 +236,10 @@ for quantile_index in range(4):
 									   "cmax": c_max}))
 
 	# Format the figure
-	fig.update_layout(title = "Change In Mean Squared Error As Function Of Efficiency Values (" + suffixes_by_quantile[quantile_index] + ")",
+	fig.update_layout(title = "Change In Mean Squared Error As Function Of Normalized Error Values (" + suffixes_by_quantile[quantile_index] + ")",
 					  xaxis = {"range": [-0.05, 1.05]}, yaxis = {"range": [-0.05, 1.05]})
-	fig.update_xaxes(title = "pre-swap efficiency 1")
-	fig.update_yaxes(title = "pre-swap efficiency 2")
+	fig.update_xaxes(title = "normalized error 1")
+	fig.update_yaxes(title = "normalized error 2")
 	
 	# Show the figure
 	fig.show()

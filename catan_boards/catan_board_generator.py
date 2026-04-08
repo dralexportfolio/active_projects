@@ -510,21 +510,29 @@ class CatanGeneratorTiling:
 		assert type(reject_flag) == bool, "CatanGeneratorTiling::swapTiles: Provided value for 'reject_flag' must be a bool object"
 
 		# Initialize the dictionary of relevant results
+		# Add in the provided inputs
 		swap_results = {}
 		swap_results["skew_power"] = skew_power
 		swap_results["reject_flag"] = reject_flag
+		# Add keys related to entropy values
 		swap_results["pre_entropy_by_tile"] = None
 		swap_results["post_entropy_by_tile"] = None
+		# Add keys related to efficiency values
 		swap_results["pre_efficiency_by_tile"] = None
 		swap_results["post_efficiency_by_tile"] = None
+		# Add keys related to error values
+		swap_results["normalized_error_by_tile"] = None
 		swap_results["pre_mean_squared_error"] = None
 		swap_results["post_mean_squared_error"] = None
+		# Add keys related to probabilities
 		swap_results["probability_1_by_tile"] = None
 		swap_results["probability_2_by_tile"] = None
+		# Add keys related to selected indices
 		swap_results["tile_type_1"] = None
 		swap_results["tile_type_2"] = None
 		swap_results["polygon_index_1"] = None
 		swap_results["polygon_index_2"] = None
+		# Add keys related to whether the swap was accepted
 		swap_results["swap_accepted_flag"] = None
 
 		# Compute the pre-swap entropy and efficiency (i.e. normalized entropy) values and add to the results dictionary
@@ -549,7 +557,10 @@ class CatanGeneratorTiling:
 		# Compute the normalized errors
 		normalized_error_by_tile = {}
 		for tile_type in self._needed_tile_types:
+			#normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / 2
 			normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / (2 * max_abs_raw_error)
+		# Add these results to the dictionary
+		swap_results["normalized_error_by_tile"] = normalized_error_by_tile
 
 		# Compute the probability values for the 1st and 2nd tile type distributions using the provided skew power and add to the results dictionary
 		# General idea: Tile type 1 should be a tile above its target efficiency, tile type 2 should be a tile below its target efficiency

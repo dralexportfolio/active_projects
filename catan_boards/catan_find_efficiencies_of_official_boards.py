@@ -19,7 +19,7 @@ path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 from math import log2
 
 # Internal modules
-from catan_generator import ALL_GAME_MODES, ALL_TILE_TYPES, CatanGeneratorTiling
+from catan_board_generator import ALL_GAME_MODES, ALL_TILE_TYPES, CatanGeneratorTiling
 from tkinter_helper import askSaveFilename
 
 # External modules

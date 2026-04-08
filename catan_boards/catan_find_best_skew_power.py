@@ -16,7 +16,7 @@ path.insert(0, str(infrastructure_folder.joinpath("board_games")))
 path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 
 # Internal modules
-from catan_generator import CatanGeneratorTiling
+from catan_board_generator import CatanGeneratorTiling
 from tkinter_helper import askSaveFilename
 
 # External modules
