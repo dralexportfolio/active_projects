@@ -798,7 +798,7 @@ if __name__ == "__main__":
 	tiling.render(dpi = dpi).save("pre.png")
 
 	for index in tqdm(range(8000)):
-		tiling.swapTiles(skew_power = 0.5, reject_flag = True)
+		tiling.swapTiles(skew_power = 0.5, reject_flag = True, normalize_type = "static")
 
 	#tiling.render(dpi = dpi).show()
 	tiling.render(dpi = dpi).save("post.png")

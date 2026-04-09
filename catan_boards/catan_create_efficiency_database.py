@@ -192,18 +192,19 @@ for row_index in tqdm(range(n_rows)):
 print("Correlation Coefficient Between Diagonal Distance And Decrease In MSE ---> " + str(-float(corrcoef(distances_from_equal, delta_mean_squared_error_column)[0, 1])))
 
 # Set the color scale and color bound values as needed
+# Fetch the needed diverging spectrum
+rgb_spectrum = ALL_PLOTLY_COLOR_SCALES_BY_TYPE["diverging"]["Portland"]
+# Define the case-specific values
 if reject_flag == False:
-	rgb_spectrum = ALL_PLOTLY_COLOR_SCALES_BY_TYPE["diverging"]["Portland"]
 	color_function = lambda index: customSpectrum(parameter = index / 100, rgb_spectrum = rgb_spectrum)
-	color_scale = [[index / 100, color_function(index).asStringTuple()] for index in range(101)]
 	c_min = -max_abs_delta
 	c_max = max_abs_delta
 else:
-	rgb_spectrum = ALL_PLOTLY_COLOR_SCALES_BY_TYPE["sequential"]["YlGnBu"]
-	color_function = lambda index: customSpectrum(parameter = 1 - index / 100, rgb_spectrum = rgb_spectrum)
-	color_scale = [[index / 100, color_function(index).asStringTuple()] for index in range(101)]
+	color_function = lambda index: customSpectrum(parameter = index / 200, rgb_spectrum = rgb_spectrum)
 	c_min = -max_abs_delta
 	c_max = 0
+# Compute the color scale
+color_scale = [[index / 100, color_function(index).asStringTuple()] for index in range(101)]
 
 # Set the title suffixes for each quantile
 suffixes_by_quantile = ["75th To 100th Percentile",
