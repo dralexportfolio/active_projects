@@ -41,7 +41,7 @@ game_mode = "Seafarers: 8 Wide"
 
 # Swap settings
 skew_power = 0
-reject_flag = False
+reject_flag = True
 
 # Number of simulations to run and number of swaps to run per simulation
 n_simulations = 20
@@ -138,6 +138,9 @@ normalized_error_column_by_tile = {}
 for tile_type in ALL_TILE_TYPES:
 	normalized_error_column_by_tile[tile_type] = readColumn(connection_manager = connection_manager, table_name = table_name, column_name = tile_type + "_normalized_error")
 
+# Close the connection manager
+connection_manager.close()
+
 
 #########################################################
 ### Analyze the simulations and create relevant plots ###
@@ -182,9 +185,6 @@ for row_index in tqdm(range(n_rows)):
 	normalized_error_1_values_by_quantile[quantile_index].append(normalized_error_1)
 	normalized_error_2_values_by_quantile[quantile_index].append(normalized_error_2)
 	distances_from_equal.append(abs(normalized_error_1 - normalized_error_2) / sqrt(2))
-
-# Close the connection manager
-connection_manager.close()
 
 # Print the correlation coefficient between these two columns
 # Note: hypothesis is that LARGER DISTANCE should result in MORE NEGATIVE delta in MSE

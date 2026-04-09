@@ -557,8 +557,8 @@ class CatanGeneratorTiling:
 		# Compute the normalized errors
 		normalized_error_by_tile = {}
 		for tile_type in self._needed_tile_types:
-			#normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / 2
-			normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / (2 * max_abs_raw_error)
+			normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / 2
+			#normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / (2 * max_abs_raw_error)
 		# Add these results to the dictionary
 		swap_results["normalized_error_by_tile"] = normalized_error_by_tile
 
