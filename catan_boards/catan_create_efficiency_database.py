@@ -41,7 +41,7 @@ game_mode = "Seafarers: 8 Wide"
 
 # Swap settings
 skew_power = 0
-reject_flag = True
+reject_flag = False
 
 # Number of simulations to run and number of swaps to run per simulation
 n_simulations = 20
@@ -95,17 +95,23 @@ for sim_index in tqdm(range(n_simulations)):
 		pre_efficiency_by_tile = swap_results["pre_efficiency_by_tile"]
 		normalized_error_by_tile = swap_results["normalized_error_by_tile"]
 
-		# Write the needed information to the db file
-		# Get the row index for the new row
-		row_index = getRowCount(connection_manager = connection_manager, table_name = table_name)
-		# Create a list containing the new row information
-		new_row = [sim_index, step_index, tile_type_1, tile_type_2, pre_mean_squared_error, post_mean_squared_error, post_mean_squared_error - pre_mean_squared_error]
-		for tile_type in ALL_TILE_TYPES:
-			new_row.append(pre_efficiency_by_tile[tile_type])
-		for tile_type in ALL_TILE_TYPES:
-			new_row.append(normalized_error_by_tile[tile_type])
-		# Add the row to the db file
-		appendRow(connection_manager = connection_manager, table_name = table_name, new_row = new_row)
+		# Compute the change in mean squared error
+		delta_mean_squared_error = post_mean_squared_error - pre_mean_squared_error
+
+		# Write the needed information to the db file (if needed)
+		if reject_flag == False or delta_mean_squared_error < 0:
+			# Get the row index for the new row
+			row_index = getRowCount(connection_manager = connection_manager, table_name = table_name)
+
+			# Create a list containing the new row information
+			new_row = [sim_index, step_index, tile_type_1, tile_type_2, pre_mean_squared_error, post_mean_squared_error, delta_mean_squared_error]
+			for tile_type in ALL_TILE_TYPES:
+				new_row.append(pre_efficiency_by_tile[tile_type])
+			for tile_type in ALL_TILE_TYPES:
+				new_row.append(normalized_error_by_tile[tile_type])
+
+			# Add the row to the db file
+			appendRow(connection_manager = connection_manager, table_name = table_name, new_row = new_row)
 
 	# Iterate the random seed (if needed)
 	if seed is not None:
@@ -121,30 +127,16 @@ connection_manager.commit()
 n_rows = getRowCount(connection_manager = connection_manager, table_name = table_name)
 
 # Read the change in MSE column from the db file
-delta_column = readColumn(connection_manager = connection_manager, table_name = table_name, column_name = "delta_mean_squared_error")
+delta_mean_squared_error_column = readColumn(connection_manager = connection_manager, table_name = table_name, column_name = "delta_mean_squared_error")
 
+# Read the tile type columns from the db file
+tile_type_1_column = readColumn(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_1")
+tile_type_2_column = readColumn(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_2")
 
-################################################################################################
-### Compute the correlation coefficient between distance from the diagonal and change in MSE ###
-################################################################################################
-# Initialize the list of distances the two efficiency values are from being equal
-distances_from_equal = []
-
-# Loop over the rows in the db file and compute the distances
-for row_index in tqdm(range(n_rows)):
-	# Get the two tile types associated with this swap
-	tile_type_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_1", row_index = row_index)
-	tile_type_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_2", row_index = row_index)
-
-	# Get the needed normalized error values associated with these tile types
-	normalized_error_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_1 + "_normalized_error", row_index = row_index)
-	normalized_error_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_2 + "_normalized_error", row_index = row_index)
-
-	# Store the distance this normalized error pair is from the diagonal line through the space
-	distances_from_equal.append(abs(normalized_error_1 - normalized_error_2) / sqrt(2))
-
-# Print the correlation coefficient between these two columns
-print("Correlation Coefficient Between Diagonal Distance And Change In MSE ---> " + str(float(corrcoef(distances_from_equal, delta_column)[0, 1])))
+# Read the normalized error columns for each tile type
+normalized_error_column_by_tile = {}
+for tile_type in ALL_TILE_TYPES:
+	normalized_error_column_by_tile[tile_type] = readColumn(connection_manager = connection_manager, table_name = table_name, column_name = tile_type + "_normalized_error")
 
 
 #########################################################
@@ -154,17 +146,18 @@ print("Correlation Coefficient Between Diagonal Distance And Change In MSE ---> 
 delta_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
 normalized_error_1_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
 normalized_error_2_values_by_quantile = {0: [], 1: [], 2: [], 3: []}
+distances_from_equal = []
 
 # Get the quantile information from the delta column
-quantile_values = quantile(a = delta_column, q = [0, 0.25, 0.5, 0.75, 1])
+quantile_values = quantile(a = delta_mean_squared_error_column, q = [0, 0.25, 0.5, 0.75, 1])
 
 # Compute the maximum magnitude delta MSE value from the db file
-max_abs_delta = max(abs(max(delta_column)), abs(min(delta_column)))
+max_abs_delta = max(abs(max(delta_mean_squared_error_column)), abs(min(delta_mean_squared_error_column)))
 
 # Read the needed information from the table
 for row_index in tqdm(range(n_rows)):
 	# Get the change in mean squared error associated with this swap
-	delta_mean_squared_error = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "delta_mean_squared_error", row_index = row_index)
+	delta_mean_squared_error = delta_mean_squared_error_column[row_index]
 
 	# Determine to which quantile the relevant data should be added
 	if quantile_values[0] <= delta_mean_squared_error and delta_mean_squared_error < quantile_values[1]:
@@ -176,23 +169,26 @@ for row_index in tqdm(range(n_rows)):
 	else:
 		quantile_index = 3
 
-	# Proceed with the analysis (if needed)
-	if reject_flag == False or delta_mean_squared_error < 0:
-		# Get the two tile types involved with this swap
-		tile_type_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_1", row_index = row_index)
-		tile_type_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = "tile_type_2", row_index = row_index)
+	# Get the two tile types involved with this swap
+	tile_type_1 = tile_type_1_column[row_index]
+	tile_type_2 = tile_type_2_column[row_index]
 
-		# Get the associated normalized error values for these tile types
-		normalized_error_1 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_1 + "_normalized_error", row_index = row_index)
-		normalized_error_2 = readEntry(connection_manager = connection_manager, table_name = table_name, column_name = tile_type_2 + "_normalized_error", row_index = row_index)
+	# Get the associated normalized error values for these tile types
+	normalized_error_1 = normalized_error_column_by_tile[tile_type_1][row_index]
+	normalized_error_2 = normalized_error_column_by_tile[tile_type_2][row_index]
 
-		# Append to the needed lists
-		delta_values_by_quantile[quantile_index].append(delta_mean_squared_error)
-		normalized_error_1_values_by_quantile[quantile_index].append(normalized_error_1)
-		normalized_error_2_values_by_quantile[quantile_index].append(normalized_error_2)
+	# Append to the needed lists
+	delta_values_by_quantile[quantile_index].append(delta_mean_squared_error)
+	normalized_error_1_values_by_quantile[quantile_index].append(normalized_error_1)
+	normalized_error_2_values_by_quantile[quantile_index].append(normalized_error_2)
+	distances_from_equal.append(abs(normalized_error_1 - normalized_error_2) / sqrt(2))
 
 # Close the connection manager
 connection_manager.close()
+
+# Print the correlation coefficient between these two columns
+# Note: hypothesis is that LARGER DISTANCE should result in MORE NEGATIVE delta in MSE
+print("Correlation Coefficient Between Diagonal Distance And Decrease In MSE ---> " + str(-float(corrcoef(distances_from_equal, delta_mean_squared_error_column)[0, 1])))
 
 # Set the color scale and color bound values as needed
 if reject_flag == False:
@@ -202,11 +198,11 @@ if reject_flag == False:
 	c_min = -max_abs_delta
 	c_max = max_abs_delta
 else:
-	rgb_spectrum = ALL_PLOTLY_COLOR_SCALES_BY_TYPE["sequential"]["Blues"]
-	color_function = lambda index: customSpectrum(parameter = index / 100, rgb_spectrum = rgb_spectrum)
+	rgb_spectrum = ALL_PLOTLY_COLOR_SCALES_BY_TYPE["sequential"]["YlGnBu"]
+	color_function = lambda index: customSpectrum(parameter = 1 - index / 100, rgb_spectrum = rgb_spectrum)
 	color_scale = [[index / 100, color_function(index).asStringTuple()] for index in range(101)]
-	c_min = 0
-	c_max = max_abs_delta
+	c_min = -max_abs_delta
+	c_max = 0
 
 # Set the title suffixes for each quantile
 suffixes_by_quantile = ["75th To 100th Percentile",
