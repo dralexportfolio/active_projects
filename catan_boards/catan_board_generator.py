@@ -502,18 +502,20 @@ class CatanGeneratorTiling:
 		return entropy_by_tile
 
 	### Define functions for swapping two tiles in an attempt to improve the MSE between actual and target efficiency values ###
-	def swapTiles(self, skew_power:Any = 1, reject_flag:bool = False) -> dict:
+	def swapTiles(self, skew_power:Any = 1, reject_flag:bool = False, normalize_type:str = "static") -> dict:
 		# Swap two tiles in an attempt to improve relevant entropy values, return a dictionary of relevant results
 		# Verify the inputs
 		assert isNumeric(skew_power, include_numpy_flag = True) == True, "CatanGeneratorTiling::swapTiles: Provided value for 'skew_power' must be numeric"
 		assert 0 <= skew_power, "CatanGeneratorTiling::swapTiles: Provided value for 'skew_power' must be non-negative"
 		assert type(reject_flag) == bool, "CatanGeneratorTiling::swapTiles: Provided value for 'reject_flag' must be a bool object"
+		assert normalize_type in ["static", "dynamic"], "CatanGeneratorTiling::swapTiles: Provided value for 'normalize_type' must be 'static' or 'dynamic"
 
 		# Initialize the dictionary of relevant results
 		# Add in the provided inputs
 		swap_results = {}
 		swap_results["skew_power"] = skew_power
 		swap_results["reject_flag"] = reject_flag
+		swap_results["normalize_type"] = normalize_type
 		# Add keys related to entropy values
 		swap_results["pre_entropy_by_tile"] = None
 		swap_results["post_entropy_by_tile"] = None
@@ -552,13 +554,15 @@ class CatanGeneratorTiling:
 			raw_error_by_tile[tile_type] = pre_efficiency_by_tile[tile_type] - TARGET_EFFICIENCY_PER_TUPLE[(self._game_mode, tile_type)]
 
 		# Normalize these errors to be between 0 and 1 (i.e. 1 is for the most above, -1 is for the most below, 0.5 is exactly correct)
-		# Fetch the largest magnitude raw error
+		# Fetch the largest magnitude raw error (needed for dynamic normalize type)
 		max_abs_raw_error = max([abs(raw_error_by_tile[tile_type]) for tile_type in self._needed_tile_types])
-		# Compute the normalized errors
+		# Compute the normalized errors using the needed method
 		normalized_error_by_tile = {}
 		for tile_type in self._needed_tile_types:
-			normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / 2
-			#normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / (2 * max_abs_raw_error)
+			if normalize_type == "static":
+				normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / 2
+			else:
+				normalized_error_by_tile[tile_type] = 0.5 + raw_error_by_tile[tile_type] / (2 * max_abs_raw_error)
 		# Add these results to the dictionary
 		swap_results["normalized_error_by_tile"] = normalized_error_by_tile
 

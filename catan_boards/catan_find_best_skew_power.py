@@ -37,6 +37,7 @@ game_mode = "Seafarers: 8 Wide"
 # Swap settings
 all_skew_powers = [0, 0.5, 1, 2, 4, float("inf")]
 reject_flag = True
+normalize_type = "static"
 
 # Number of simulations to run and number of swaps to run per simulation
 n_simulations_per_power = 100
@@ -68,7 +69,7 @@ for skew_power in all_skew_powers:
 		# Randomly swap tiles for the needed number of simulation steps
 		for step_index in range(n_steps_per_simulation):
 			# Execute a random swap and get the needed results
-			swap_results = current_tiling.swapTiles(skew_power = skew_power, reject_flag = reject_flag)
+			swap_results = current_tiling.swapTiles(skew_power = skew_power, reject_flag = reject_flag, normalize_type = normalize_type)
 
 			# Extract the pre-swap MSE from the swap results
 			pre_mean_squared_error = swap_results["pre_mean_squared_error"]

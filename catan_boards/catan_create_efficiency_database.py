@@ -42,6 +42,7 @@ game_mode = "Seafarers: 8 Wide"
 # Swap settings
 skew_power = 0
 reject_flag = True
+normalize_type = "static"
 
 # Number of simulations to run and number of swaps to run per simulation
 n_simulations = 20
@@ -85,7 +86,7 @@ for sim_index in tqdm(range(n_simulations)):
 	# Randomly swap tiles for the needed number of simulation steps
 	for step_index in range(n_steps_per_simulation):
 		# Execute a random swap and get the needed results
-		swap_results = current_tiling.swapTiles(skew_power = skew_power, reject_flag = reject_flag)
+		swap_results = current_tiling.swapTiles(skew_power = skew_power, reject_flag = reject_flag, normalize_type = normalize_type)
 
 		# Extract the needed values from the swap results
 		tile_type_1 = swap_results["tile_type_1"]
