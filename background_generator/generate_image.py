@@ -31,6 +31,9 @@ seed = 0
 # Softmax normalizer
 softmax_normalizer = 320
 
+# Circle flag
+circle_flag = False
+
 # Show and save flags
 show_flag = False
 save_flag = True
@@ -56,7 +59,7 @@ if __name__ == "__main__":
     vector_field.computeAllCurlDivergence()
 
     # Plot the needed images
-    vector_field.plotCurl(show_flag = show_flag, save_flag = save_flag)
-    vector_field.plotDivergence(show_flag = show_flag, save_flag = save_flag)
-    vector_field.plotPCA(unclipped_flag = unclipped_flag, keep_positive_flag = keep_positive_flag,
-	                     keep_negative_flag = keep_negative_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.plotCurl(circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.plotDivergence(circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.plotPCA(unclipped_flag = unclipped_flag, keep_positive_flag = keep_positive_flag, keep_negative_flag = keep_negative_flag,
+    					 circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
