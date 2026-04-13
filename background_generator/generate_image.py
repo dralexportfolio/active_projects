@@ -31,6 +31,10 @@ seed = 0
 # Softmax normalizer
 softmax_normalizer = 320
 
+# Gap sizes
+gap_size_quiver = 50
+gap_size_streamplot = 20
+
 # Circle flag
 circle_flag = False
 
@@ -59,7 +63,13 @@ if __name__ == "__main__":
     vector_field.computeAllCurlDivergence()
 
     # Plot the needed images
+    # Vector field
+    vector_field.plotField(gap_size = gap_size_quiver, plot_type = "quiver", show_flag = show_flag, save_flag = save_flag)
+    vector_field.plotField(gap_size = gap_size_streamplot, plot_type = "streamplot", show_flag = show_flag, save_flag = save_flag)
+    quit()
+    # Curl and divergence
     vector_field.plotCurl(circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
     vector_field.plotDivergence(circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    # PCA combinations
     vector_field.plotPCA(unclipped_flag = unclipped_flag, keep_positive_flag = keep_positive_flag, keep_negative_flag = keep_negative_flag,
     					 circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
