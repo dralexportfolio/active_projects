@@ -29,13 +29,13 @@ n_cols = 1920
 seed = 0
 
 # Softmax normalizer
-softmax_normalizer = 320
+softmax_normalizer = 480
 
 # Affine transformation values
-m_11 = 0
-m_12 = 1
-m_21 = -1
-m_22 = 0
+m_11 = 1
+m_12 = 0
+m_21 = 1
+m_22 = 1
 b_1 = 0
 b_2 = 0
 
