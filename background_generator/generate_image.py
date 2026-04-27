@@ -15,7 +15,7 @@ infrastructure_folder = parent_folder.joinpath("infrastructure")
 path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
 
 # Internal modules
-from vector_helper import VectorField2D
+from vector_helper import VectorFieldGenerator
 
 
 #################################
@@ -31,6 +31,14 @@ seed = 0
 # Softmax normalizer
 softmax_normalizer = 320
 
+# Affine transformation values
+m_11 = 0
+m_12 = 1
+m_21 = -1
+m_22 = 0
+b_1 = 0
+b_2 = 0
+
 # Gap sizes
 gap_size_quiver = 50
 gap_size_streamplot = 20
@@ -39,37 +47,34 @@ gap_size_streamplot = 20
 circle_flag = False
 
 # Show and save flags
-show_flag = False
-save_flag = True
-
-# PCA image flags
-unclipped_flag = True
-keep_positive_flag = True
-keep_negative_flag = True
+show_flag = True
+save_flag = False
 
 
 #########################################################################
 ### Create the code inside __main__ so that multiprocessing will work ###
 #########################################################################
 if __name__ == "__main__":
-    # Create the vector field object
-    vector_field = VectorField2D(n_rows = n_rows, n_cols = n_cols)
+    # Create the vector field generator and generate the vector field using the needed settings
+    vector_field_generator = VectorFieldGenerator(n_rows = n_rows, n_cols = n_cols)
+    vector_field = vector_field_generator.generate(seed = seed, softmax_normalizer = softmax_normalizer)
 
-    # Compute all vectors for the vector field
-    vector_field.generateBaseVectors(seed = seed)
-    vector_field.computeRemainingVectors(softmax_normalizer = softmax_normalizer)
+    # Apply the affine transformation to the vector field
+    vector_field.applyAffineTransformation(m_11 = m_11, m_12 = m_12, m_21 = m_21, m_22 = m_22, b_1 = b_1, b_2 = b_2)
 
     # Compute the curl and divergence of the vector field
-    vector_field.computeAllCurlDivergence()
+    vector_field.computeDerivativeInfo()
 
     # Plot the needed images
     # Vector field
-    vector_field.plotField(gap_size = gap_size_quiver, plot_type = "quiver", show_flag = show_flag, save_flag = save_flag)
-    vector_field.plotField(gap_size = gap_size_streamplot, plot_type = "streamplot", show_flag = show_flag, save_flag = save_flag)
-    quit()
-    # Curl and divergence
-    vector_field.plotCurl(circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
-    vector_field.plotDivergence(circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.plotVectorField(gap_size = gap_size_quiver, plot_type = "quiver", show_flag = show_flag, save_flag = save_flag)
+    vector_field.plotVectorField(gap_size = gap_size_streamplot, plot_type = "streamplot", show_flag = show_flag, save_flag = save_flag)
+    # Raw derivative-related values
+    vector_field.renderDerivativeInfo(curl_flag = True, divergence_flag = False, jacobian_flag = False, circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.renderDerivativeInfo(curl_flag = False, divergence_flag = True, jacobian_flag = False, circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.renderDerivativeInfo(curl_flag = False, divergence_flag = False, jacobian_flag = True, circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
     # PCA combinations
-    vector_field.plotPCA(unclipped_flag = unclipped_flag, keep_positive_flag = keep_positive_flag, keep_negative_flag = keep_negative_flag,
-    					 circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.renderDerivativeInfo(curl_flag = True, divergence_flag = True, jacobian_flag = False, circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.renderDerivativeInfo(curl_flag = True, divergence_flag = False, jacobian_flag = True, circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.renderDerivativeInfo(curl_flag = False, divergence_flag = True, jacobian_flag = True, circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
+    vector_field.renderDerivativeInfo(curl_flag = True, divergence_flag = True, jacobian_flag = True, circle_flag = circle_flag, show_flag = show_flag, save_flag = save_flag)
