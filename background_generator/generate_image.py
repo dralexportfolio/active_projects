@@ -29,7 +29,7 @@ n_cols = 1920
 seed = 0
 
 # Softmax normalizer
-softmax_normalizer = 120
+softmax_normalizer = 480
 
 # Affine transformation values
 m_11 = 1
@@ -66,13 +66,12 @@ if __name__ == "__main__":
     # Vector field
     vector_field.plotVectorField(gap_size = gap_size_quiver, plot_type = "quiver", show_flag = show_flag, save_flag = save_flag)
     vector_field.plotVectorField(gap_size = gap_size_streamplot, plot_type = "streamplot", show_flag = show_flag, save_flag = save_flag)
-    quit()
     # Raw derivative-related values
     vector_field.renderDerivativeInfo(curl_flag = True, divergence_flag = False, jacobian_flag = False, show_flag = show_flag, save_flag = save_flag)
     vector_field.renderDerivativeInfo(curl_flag = False, divergence_flag = True, jacobian_flag = False, show_flag = show_flag, save_flag = save_flag)
     vector_field.renderDerivativeInfo(curl_flag = False, divergence_flag = False, jacobian_flag = True, show_flag = show_flag, save_flag = save_flag)
     # PCA combinations
+    vector_field.renderDerivativeInfo(curl_flag = True, divergence_flag = True, jacobian_flag = True, show_flag = show_flag, save_flag = save_flag)
     vector_field.renderDerivativeInfo(curl_flag = True, divergence_flag = True, jacobian_flag = False, show_flag = show_flag, save_flag = save_flag)
     vector_field.renderDerivativeInfo(curl_flag = True, divergence_flag = False, jacobian_flag = True, show_flag = show_flag, save_flag = save_flag)
     vector_field.renderDerivativeInfo(curl_flag = False, divergence_flag = True, jacobian_flag = True, show_flag = show_flag, save_flag = save_flag)
-    vector_field.renderDerivativeInfo(curl_flag = True, divergence_flag = True, jacobian_flag = True, show_flag = show_flag, save_flag = save_flag)
