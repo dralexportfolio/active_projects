@@ -1,23 +1,11 @@
 ##########################################
 ### Import needed general dependencies ###
 ##########################################
-# Add paths for internal modules
-# Import dependencies
-from pathlib import Path
-from sys import path
-# Get the shared unit tests folder
-unit_tests_folder = Path(__file__).parent.parent
-# Get the shared parent folder
-parent_folder = unit_tests_folder.parent
-# Get the shared infrastructure folder
-infrastructure_folder = parent_folder.joinpath("infrastructure")
-# Add the needed paths
-path.insert(0, str(infrastructure_folder.joinpath("board_games")))
-path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
+# DraleInfra objects
+from DraleInfra.common_needs.tkinter_helper import askSaveFilename
 
-# Internal modules
+# Internal objects
 from catan_board_generator import CatanGeneratorTiling
-from tkinter_helper import askSaveFilename
 
 # External modules
 import matplotlib.pyplot as plt

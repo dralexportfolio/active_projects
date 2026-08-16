@@ -1,31 +1,17 @@
 ##########################################
 ### Import needed general dependencies ###
 ##########################################
-# Add paths for internal modules
-# Import dependencies
-from pathlib import Path
-from sys import path
-# Get the shared unit tests folder
-unit_tests_folder = Path(__file__).parent.parent
-# Get the shared parent folder
-parent_folder = unit_tests_folder.parent
-# Get the shared infrastructure folder
-infrastructure_folder = parent_folder.joinpath("infrastructure")
-# Add the needed paths
-path.insert(0, str(infrastructure_folder.joinpath("board_games")))
-path.insert(0, str(infrastructure_folder.joinpath("common_needs")))
+# DraleInfra objects
+from DraleInfra.board_games.Board import Board
+from DraleInfra.board_games.Polygon import HEXAGON_REGULAR_TALL
+from DraleInfra.common_needs.color_helper import RGB
+from DraleInfra.common_needs.privacy_helper import privacyDecorator
+from DraleInfra.common_needs.tkinter_helper import createCanvas, createRectangle, createWindow
+from DraleInfra.common_needs.type_helper import isListWithStringEntries, isNumeric, tolerantlyCompare
 
 # Built-in modules
 from math import log2, sqrt
 from typing import Any
-
-# Internal modules
-from Board import Board
-from color_helper import RGB
-from Polygon import HEXAGON_REGULAR_TALL
-from privacy_helper import privacyDecorator
-from tkinter_helper import createCanvas, createRectangle, createWindow
-from type_helper import isListWithStringEntries, isNumeric, tolerantlyCompare
 
 # External modules
 from numpy import random

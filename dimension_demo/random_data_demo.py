@@ -1,21 +1,8 @@
 ##########################################
 ### Import needed general dependencies ###
 ##########################################
-# Add paths for internal modules
-# Import dependencies
-from pathlib import Path
-from sys import path
-# Get the shared active projects folder
-active_projects_folder = Path(__file__).parent.parent
-# Get the shared parent folder
-parent_folder = active_projects_folder.parent
-# Get the shared infrastructure folder
-infrastructure_folder = parent_folder.joinpath("infrastructure")
-# Add the needed paths
-path.insert(0, str(infrastructure_folder.joinpath("dimensional_analysis")))
-
-# Internal modules
-from persistent_dimension import estimatePointwiseDimension, generateDimensionDatabase, plotDimensionEstimateOfPoint, plotDimensionEstimateOfSet
+# DraleInfra objects
+from DraleInfra.dimensional_analysis.persistent_dimension import estimatePointwiseDimension, generateDimensionDatabase, plotDimensionEstimateOfPoint, plotDimensionEstimateOfSet
 
 # External modules
 from numpy import random
