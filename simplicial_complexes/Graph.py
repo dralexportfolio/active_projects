@@ -186,10 +186,11 @@ class Graph:
 		# Return the result
 		return embedded_distances
 
-	def plot(self, title_prefix:str = "", n_iter:int = 1000, max_update_size:float = 0.01):
+	def plot(self, title_prefix:str = "", show_labels_flag:bool = True, n_iter:int = 1000, max_update_size:float = 0.01):
 		# Create a plot of the nodes and edges for this graph
 		# Verify the inputs
 		assert type(title_prefix) == str, "Graph::plot: Provided value for 'title_prefix' must be a str object"
+		assert type(show_labels_flag) == bool, "Graph::plot: Provided value for 'show_labels_flag' must be a bool object"
 		assert type(n_iter) == int, "Graph::plot: Provided value for 'n_iter' must be an int object"
 		assert n_iter > 0, "Graph::plot: Provided value for 'n_iter' must be positive"
 		assert type(max_update_size) == float, "Graph::plot: Provided value for 'max_update_size' must be a float object"
@@ -314,17 +315,18 @@ class Graph:
 					   color = VERTEX_COLOR,
 					   zorder = 10)
 
-			# Add the labels to the plot
-			for index in range(cluster_size):
-				vertex_label = self._vertex_labels[current_cluster[index]]
-				ax.text(cluster_x_coordinates[index],
-						cluster_y_coordinates[index],
-						cluster_z_coordinates[index],
-						vertex_label,
-						color = TEXT_COLOR,
-						size = TEXT_SIZE,
-						fontweight = "bold",
-						zorder = 20)
+			# Add the labels to the plot (if needed)
+			if show_labels_flag == True:
+				for index in range(cluster_size):
+					vertex_label = self._vertex_labels[current_cluster[index]]
+					ax.text(cluster_x_coordinates[index],
+							cluster_y_coordinates[index],
+							cluster_z_coordinates[index],
+							vertex_label,
+							color = TEXT_COLOR,
+							size = TEXT_SIZE,
+							fontweight = "bold",
+							zorder = 20)
 
 			# Set the plot title to use
 			plot_title = ""
