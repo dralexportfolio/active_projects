@@ -188,9 +188,6 @@ class SimplicialComplex:
 		removed_vertices = [index for index in range(self._n_vertices) if union_string[index] == "0"]
 		new_vertex_labels = [self._vertex_labels[index] for index in range(self._n_vertices) if union_string[index] == "1"]
 
-		print(self._vertex_labels)
-		print(new_vertex_labels)
-
 		# Update the internal storage to match the changes
 		self._n_vertices -= len(removed_vertices)
 		self._vertex_labels = new_vertex_labels
@@ -370,7 +367,7 @@ class SimplicialComplex:
 	def oneSkeleton(self) -> Graph:
 		# Return a Graph object representing the 1-skeleton of the complex
 		# Initialize the graph
-		one_skeleton = Graph(self._n_vertices, self._vertex_labels)
+		one_skeleton = Graph(n_vertices = self._n_vertices, vertex_labels = self._vertex_labels)
 
 		# Loop over the simplex integers
 		for simplex_integer in self._simplex_integers:
@@ -408,7 +405,7 @@ def computeBoundaryComplexes(simplicial_complex:SimplicialComplex) -> list:
 		n_cols = boundary_matrix.shape[1]
 
 		# Create a new boundary complex using the rows
-		boundary_complex = SimplicialComplex(n_cols, col_labels)
+		boundary_complex = SimplicialComplex(n_vertices = n_cols, vertex_labels = col_labels)
 		for row_index in range(n_rows):
 			vertices = [col_index for col_index in range(n_cols) if boundary_matrix[row_index, col_index] == 1]
 			if len(vertices) > 0:
@@ -436,7 +433,7 @@ def computeCoboundaryComplexes(simplicial_complex:SimplicialComplex) -> list:
 		n_cols = boundary_matrix.shape[1]
 
 		# Create a new coboundary complex using the columns
-		coboundary_complex = SimplicialComplex(n_rows, row_labels)
+		coboundary_complex = SimplicialComplex(n_vertices = n_rows, vertex_labels = row_labels)
 		for col_index in range(n_cols):
 			vertices = [row_index for row_index in range(n_rows) if boundary_matrix[row_index, col_index] == 1]
 			if len(vertices) > 0:
