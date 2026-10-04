@@ -9,7 +9,7 @@ from SimplicialComplex import *
 ### Perform a series of tests on the simplicial complex class ###
 #################################################################
 # Create the empty complex
-simplicial_complex = SimplicialComplex(12)
+simplicial_complex = SimplicialComplex(n_vertices = 12)
 
 # Add some initial simplicies
 simplicial_complex.addSimplex(0, 1)
